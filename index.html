@@ -91,7 +91,7 @@
     </ul>
 
     <div id="globalSearchWrapper">
-        <div class="search-panel p-4 rounded-3 shadow-sm mb-4" id="searchPanel" style="display: block;">
+        <div class="search-panel p-4 rounded-3 shadow-sm mb-4" id="searchPanel" style="display: none;">
             <div class="row g-3">
                 <div class="col-md-4 position-relative">
                     <label class="form-label small fw-bold text-uppercase text-muted">Locations (Address, Street, Suburb, SA2)</label>
@@ -739,30 +739,21 @@
     tagContainer.addEventListener('click', () => locationInput.focus());
 
     function buildSearchIndex() {
-        let seen = new Set();
         searchGlobalIndex = [];
         
-        masterSalesData.forEach(row => {
-            let sub = row['Suburb Name'];
-            let sa2 = row['SA2 Name'] ? row['SA2 Name'].toUpperCase() : null;
-            let st = row['Street Name'];
-            let stNum = row['Street Number'];
-            
-            if (sa2 && !seen.has('sa2_'+sa2)) { seen.add('sa2_'+sa2); searchGlobalIndex.push({text: sa2, type: 'SA2 Region'}); }
-            if (sub && !seen.has('sub_'+sub)) { seen.add('sub_'+sub); searchGlobalIndex.push({text: sub, type: 'Suburb'}); }
-            
-            if (st && sub) {
-                let stSub = `${st}, ${sub}`;
-                if (!seen.has('st_'+stSub)) { seen.add('st_'+stSub); searchGlobalIndex.push({text: stSub, type: 'Street'}); }
-            }
-            if (stNum && st && sub) {
-                let fullAddr = `${stNum} ${st}, ${sub}`;
-                if (!seen.has('addr_'+fullAddr)) { 
-                    seen.add('addr_'+fullAddr); 
-                    searchGlobalIndex.push({text: fullAddr, type: 'Address'}); 
-                }
-            }
-        });
+        // Populate dropdown with Suburbs we already loaded
+        if (suburbMasterData) {
+            Object.keys(suburbMasterData).forEach(sub => {
+                searchGlobalIndex.push({ text: sub, type: 'Suburb' });
+            });
+        }
+        
+        // Populate dropdown with SA2 Regions we already loaded
+        if (regionMasterData) {
+            Object.keys(regionMasterData).forEach(reg => {
+                searchGlobalIndex.push({ text: reg, type: 'SA2 Region' });
+            });
+        }
     }
 
     function getTagClass(type) {
@@ -966,43 +957,50 @@
     
     }
 
-    function executeSearch() {
+    async function executeSearch() {
+        if (activeTags.length === 0) {
+            alert("Please select at least one Suburb or SA2 Region from the dropdown.");
+            return;
+        }
+
         $('#searchLoading').removeClass('d-none');
         $('#searchBtn').prop('disabled', true);
 
-        setTimeout(async () => {
-            const minPrice = parseFloat(document.getElementById('searchMinPrice').value) || 0;
-            const maxPrice = parseFloat(document.getElementById('searchMaxPrice').value) || Infinity;
-            const yearFrom = parseInt(document.getElementById('searchYearFrom').value);
-            const yearTo = parseInt(document.getElementById('searchYearTo').value);
+        const minPrice = parseFloat(document.getElementById('searchMinPrice').value) || 0;
+        const maxPrice = parseFloat(document.getElementById('searchMaxPrice').value) || Infinity;
+        const yearFrom = parseInt(document.getElementById('searchYearFrom').value);
+        const yearTo = parseInt(document.getElementById('searchYearTo').value);
 
-            const filteredData = masterSalesData.filter(row => {
-                if (activeTags.length > 0) {
-                    let tagMatch = false;
-                    for (let tag of activeTags) {
-                        const tagUpper = tag.text.toUpperCase();
-                        
-                        if (tag.type === 'Suburb' && row['Suburb Name'] && row['Suburb Name'].toUpperCase() === tagUpper) { tagMatch = true; break; }
-                        if (tag.type === 'SA2 Region' && row['SA2 Name'] && row['SA2 Name'].toUpperCase() === tagUpper) { tagMatch = true; break; }
-                        if (tag.type === 'Street' && row['Street Name'] && row['Suburb Name'] && `${row['Street Name']}, ${row['Suburb Name']}`.toUpperCase() === tagUpper) { tagMatch = true; break; }
-                        if (tag.type === 'Address' && row['Street Number'] && row['Street Name'] && row['Suburb Name'] && `${row['Street Number']} ${row['Street Name']}, ${row['Suburb Name']}`.toUpperCase() === tagUpper) { tagMatch = true; break; }
-                    }
-                    if (!tagMatch) return false;
-                }
+        let rawCloudData = [];
+
+        try {
+            // 1. Fetch the data directly from your Firebase Cloud
+            for (let tag of activeTags) {
+                const tagResults = await window.queryFirestoreLocations(tag);
+                rawCloudData = rawCloudData.concat(tagResults);
+            }
+
+            // 2. Filter the downloaded cloud data locally by price and year parameters
+            const filteredData = rawCloudData.filter(row => {
                 if (row['Sale Price'] < minPrice || row['Sale Price'] > maxPrice) return false;
                 if (row['Sale Year'] < yearFrom || row['Sale Year'] > yearTo) return false;
                 return true;
             });
 
+            // 3. Render Table and Map
             salesDataTableInstance.clear();
             salesDataTableInstance.rows.add(filteredData);
             salesDataTableInstance.draw();
             
             await updateMapAsync(filteredData);
 
-            $('#searchLoading').addClass('d-none');
-            $('#searchBtn').prop('disabled', false);
-        }, 50);
+        } catch (err) {
+            console.error("Search execution failed:", err);
+            alert("Error retrieving data from the cloud database.");
+        }
+
+        $('#searchLoading').addClass('d-none');
+        $('#searchBtn').prop('disabled', false);
     }
 
     document.querySelectorAll('.search-panel input, .search-panel select').forEach(el => {
@@ -1033,28 +1031,12 @@
         suburbMasterData = {}; 
         regionMasterData = {};
 
-        const subPromises = YEARS.map(year => safeFetch(`Suburb Data/${year}_suburb_data.json`).then(data => {
-            data.forEach(row => {
-                if (!row['suburb']) return;
-                let sub = row['suburb'].trim().toUpperCase();
-                if (!suburbMasterData[sub]) suburbMasterData[sub] = {}; 
-                suburbMasterData[sub][year] = { mean: row['mean P'], median: row['median P'], n: row['n'] };
-            });
-        }));
-        
-        const regPromises = YEARS.map(year => safeFetch(`Region Data/${year}_regional_data.json`).then(data => {
-            data.forEach(row => {
-                if (!row['region']) return;
-                let reg = row['region'].trim().toUpperCase();
-                if (!regionMasterData[reg]) regionMasterData[reg] = {};
-                regionMasterData[reg][year] = { 
-                    mu_R: row['mu_R'], sigma_R: row['sigma_R'], n: row['n'] || 0,
-                    mu_L: row['mu_L'], sigma_L: row['sigma_L']
-                };
-            });
-        }));
+        // ... (Keep all your existing fetch logic here) ...
 
         await Promise.all([...subPromises, ...regPromises]);
+        
+        buildSearchIndex(); // <-- ADD THIS LINE HERE
+        
         renderSuburbTables();
         renderRegionTable();
         populateCalculator();
