@@ -738,24 +738,6 @@
 
     tagContainer.addEventListener('click', () => locationInput.focus());
 
-    function buildSearchIndex() {
-        searchGlobalIndex = [];
-        
-        // Populate dropdown with Suburbs we already loaded
-        if (suburbMasterData) {
-            Object.keys(suburbMasterData).forEach(sub => {
-                searchGlobalIndex.push({ text: sub, type: 'Suburb' });
-            });
-        }
-        
-        // Populate dropdown with SA2 Regions we already loaded
-        if (regionMasterData) {
-            Object.keys(regionMasterData).forEach(reg => {
-                searchGlobalIndex.push({ text: reg, type: 'SA2 Region' });
-            });
-        }
-    }
-
     function getTagClass(type) {
         if (type === 'Address') return 'tag-address';
         if (type === 'Street') return 'tag-street';
@@ -948,13 +930,62 @@
         });
     }
 
-    async function loadMasterDatabase() {
-    initDataTable(); 
-    initMap(); 
+    async function loadAnalyticsData() {
+        suburbMasterData = {}; 
+        regionMasterData = {};
 
-    document.getElementById('searchBtn').disabled = false;
-    document.getElementById('searchLoading').classList.add('d-none');
-    
+        // Using %20 ensures GitHub Pages reads folder spaces correctly
+        const subPromises = YEARS.map(year => safeFetch(`Suburb%20Data/${year}_suburb_data.json`).then(data => {
+            data.forEach(row => {
+                if (!row['suburb']) return;
+                let sub = row['suburb'].trim().toUpperCase();
+                if (!suburbMasterData[sub]) suburbMasterData[sub] = {}; 
+                suburbMasterData[sub][year] = { mean: row['mean P'], median: row['median P'], n: row['n'] };
+            });
+        }));
+        
+        const regPromises = YEARS.map(year => safeFetch(`Region%20Data/${year}_regional_data.json`).then(data => {
+            data.forEach(row => {
+                if (!row['region']) return;
+                let reg = row['region'].trim().toUpperCase();
+                if (!regionMasterData[reg]) regionMasterData[reg] = {};
+                regionMasterData[reg][year] = { 
+                    mu_R: row['mu_R'], sigma_R: row['sigma_R'], n: row['n'] || 0,
+                    mu_L: row['mu_L'], sigma_L: row['sigma_L']
+                };
+            });
+        }));
+
+        await Promise.all([...subPromises, ...regPromises]);
+        
+        buildSearchIndex();
+        renderSuburbTables();
+        renderRegionTable();
+        populateCalculator();
+    }
+
+    function buildSearchIndex() {
+        searchGlobalIndex = [];
+        
+        if (suburbMasterData) {
+            Object.keys(suburbMasterData).forEach(sub => {
+                searchGlobalIndex.push({ text: sub, type: 'Suburb' });
+            });
+        }
+        
+        if (regionMasterData) {
+            Object.keys(regionMasterData).forEach(reg => {
+                searchGlobalIndex.push({ text: reg, type: 'SA2 Region' });
+            });
+        }
+    }
+
+    async function loadMasterDatabase() {
+        initDataTable(); 
+        initMap(); 
+        
+        document.getElementById('searchBtn').disabled = false;
+        document.getElementById('searchLoading').classList.add('d-none');
     }
 
     async function executeSearch() {
@@ -974,20 +1005,17 @@
         let rawCloudData = [];
 
         try {
-            // 1. Fetch the data directly from your Firebase Cloud
             for (let tag of activeTags) {
                 const tagResults = await window.queryFirestoreLocations(tag);
                 rawCloudData = rawCloudData.concat(tagResults);
             }
 
-            // 2. Filter the downloaded cloud data locally by price and year parameters
             const filteredData = rawCloudData.filter(row => {
                 if (row['Sale Price'] < minPrice || row['Sale Price'] > maxPrice) return false;
                 if (row['Sale Year'] < yearFrom || row['Sale Year'] > yearTo) return false;
                 return true;
             });
 
-            // 3. Render Table and Map
             salesDataTableInstance.clear();
             salesDataTableInstance.rows.add(filteredData);
             salesDataTableInstance.draw();
@@ -996,7 +1024,7 @@
 
         } catch (err) {
             console.error("Search execution failed:", err);
-            alert("Error retrieving data from the cloud database.");
+            alert("Error retrieving data from the cloud. Have you entered your Firebase API keys?");
         }
 
         $('#searchLoading').addClass('d-none');
@@ -1026,21 +1054,6 @@
         } catch(e) {}
         return [];
     };
-
-    async function loadAnalyticsData() {
-        suburbMasterData = {}; 
-        regionMasterData = {};
-
-        // ... (Keep all your existing fetch logic here) ...
-
-        await Promise.all([...subPromises, ...regPromises]);
-        
-        buildSearchIndex(); // <-- ADD THIS LINE HERE
-        
-        renderSuburbTables();
-        renderRegionTable();
-        populateCalculator();
-    }
 
     function renderSuburbTables() {
         let isStrict = $('#hideLowVolumeToggle').is(':checked');
