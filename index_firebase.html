@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sydney Property Baseline</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; padding-top: 20px; color: #1f2937; }
+        h2 { font-weight: 700; color: #111827; margin-bottom: 24px; }
+        
+        .nav-tabs { border-bottom: 2px solid #e5e7eb; margin-bottom: 24px; border-radius: 0; }
+        .nav-tabs .nav-link { border: none; color: #6b7280; font-weight: 500; padding: 12px 20px; border-bottom: 2px solid transparent; margin-bottom: -2px; border-radius: 0; }
+        .nav-tabs .nav-link:hover { color: #374151; border-bottom: 2px solid #d1d5db; }
+        .nav-tabs .nav-link.active { color: #2563eb; border-bottom: 2px solid #2563eb; background: transparent; }
+
+        .table-container { background: #ffffff; padding: 24px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+
+        .search-panel { background: #f8fafc; border: 1px solid #e2e8f0; display: none; }
+        
+        .modal-content { border-radius: 12px; border: none; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .modal-header { border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; border-radius: 12px 12px 0 0; }
+        .modal-title { font-weight: 600; }
+        .chart-container { position: relative; height: 400px; width: 100%; margin-top: 20px; }
+
+        .tag-container {
+            display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0.375rem 0.75rem;
+            border: 1px solid #dee2e6; border-radius: 0.375rem; background-color: #fff;
+            min-height: 38px; align-items: center; cursor: text;
+        }
+        .tag-container input { border: none; outline: none; flex-grow: 1; min-width: 150px; background: transparent; padding: 0; margin: 0; font-size: 0.875rem; color: #495057; }
+        
+        .search-tag { padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 6px; color: white; }
+        .search-tag span { cursor: pointer; font-weight: bold; font-size: 1rem; line-height: 1; }
+        .search-tag span:hover { color: #f1f5f9; }
+        
+        .tag-address { background-color: #f97316; } 
+        .tag-street { background-color: #10b981; }  
+        .tag-suburb { background-color: #3b82f6; }  
+        .tag-sa2 { background-color: #8b5cf6; }     
+
+        .dropdown-menu.autocomplete-menu {
+            position: absolute; width: 100%; max-height: 250px; overflow-y: auto; 
+            z-index: 1050; margin-top: 2px; border-radius: 0.375rem; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        .dropdown-item.active, .dropdown-item:hover { background-color: #f1f5f9; color: #0f172a; cursor: pointer; }
+
+        #interactiveMap { height: 650px; width: 100%; border-radius: 8px; z-index: 1; }
+        .leaflet-tooltip { font-family: 'Inter', sans-serif; font-size: 0.85rem; padding: 10px; border-radius: 8px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+
+        .table-responsive { max-height: 700px; overflow: auto; background: white; border: 1px solid #e5e7eb; border-radius: 8px; }
+        .table { border-collapse: separate; border-spacing: 0; margin-bottom: 0; }
+        .table th, .table td { white-space: nowrap !important; } 
+        
+        .table > thead > tr > th { 
+            position: sticky !important; top: 0 !important; z-index: 10 !important; 
+            font-weight: 600; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; color: #6b7280; 
+            background-color: #f9fafb !important; border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 0 #e5e7eb; 
+        }
+        .sticky-left { position: sticky !important; left: 0; z-index: 11 !important; background-color: #f8fafc !important; border-right: 1px solid #e5e7eb; min-width: 50px; }
+        .table > thead > tr > th.sticky-left { z-index: 15 !important; background-color: #f1f5f9 !important; box-shadow: inset -1px -1px 0 #e5e7eb; }
+
+        .table > tbody > tr > td { vertical-align: middle; font-size: 0.875rem; border-bottom: 1px solid #f3f4f6; }
+        
+        .clickable-row { cursor: pointer; transition: background-color 0.2s; }
+        .clickable-row:hover { background-color: #f0fdf4 !important; }
+        
+        .matrix-cell:hover { opacity: 0.8; transform: scale(1.05); cursor: crosshair; }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4">
+    <h2>Property Baseline Dashboard</h2>
+    
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item"><button class="nav-link active" id="intro-tab" data-bs-toggle="tab" data-bs-target="#introPane" type="button">📖 Introduction</button></li>
+        <li class="nav-item"><button class="nav-link" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button">1. Database Search</button></li>
+        <li class="nav-item"><button class="nav-link fw-bold text-primary" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapView" type="button">🌍 Interactive Map</button></li>
+        <li class="nav-item"><button class="nav-link" id="suburbs-tab" data-bs-toggle="tab" data-bs-target="#suburbs" type="button">2. Suburb Time-Series</button></li>
+        <li class="nav-item"><button class="nav-link" id="regions-tab" data-bs-toggle="tab" data-bs-target="#regions" type="button">3. SA2 Bivariate Tracking</button></li>
+        <li class="nav-item"><button class="nav-link fw-bold text-success" id="calculator-tab" data-bs-toggle="tab" data-bs-target="#calculator" type="button">🧮 Estimator</button>
+</li>
+    </ul>
+
+    <div id="globalSearchWrapper">
+        <div class="search-panel p-4 rounded-3 shadow-sm mb-4" id="searchPanel" style="display: block;">
+            <div class="row g-3">
+                <div class="col-md-4 position-relative">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Locations (Address, Street, Suburb, SA2)</label>
+                    <div class="tag-container" id="suburbTagContainer">
+                        <input type="text" id="searchLocationInput" placeholder="e.g. 5 ARABELLA ST, HUNTERS HILL" autocomplete="off">
+                    </div>
+                    <div id="autocompleteDropdown" class="dropdown-menu autocomplete-menu shadow-lg" style="display: none;"></div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Min Price</label>
+                    <input type="number" id="searchMinPrice" class="form-control" placeholder="Any">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Max Price</label>
+                    <input type="number" id="searchMaxPrice" class="form-control" placeholder="Any">
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Year From</label>
+                    <select id="searchYearFrom" class="form-select px-2">
+                        <option value="2007">2007</option><option value="2008">2008</option><option value="2009">2009</option>
+                        <option value="2010">2010</option><option value="2011">2011</option><option value="2012">2012</option>
+                        <option value="2013">2013</option><option value="2014">2014</option><option value="2015">2015</option>
+                        <option value="2016">2016</option><option value="2017">2017</option><option value="2018">2018</option>
+                        <option value="2019">2019</option><option value="2020">2020</option><option value="2021">2021</option>
+                        <option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option>
+                        <option value="2025" selected>2025</option><option value="2026">2026</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <label class="form-label small fw-bold text-uppercase text-muted">Year To</label>
+                    <select id="searchYearTo" class="form-select px-2">
+                        <option value="2007">2007</option><option value="2008">2008</option><option value="2009">2009</option>
+                        <option value="2010">2010</option><option value="2011">2011</option><option value="2012">2012</option>
+                        <option value="2013">2013</option><option value="2014">2014</option><option value="2015">2015</option>
+                        <option value="2016">2016</option><option value="2017">2017</option><option value="2018">2018</option>
+                        <option value="2019">2019</option><option value="2020">2020</option><option value="2021">2021</option>
+                        <option value="2022">2022</option><option value="2023">2023</option><option value="2024">2024</option>
+                        <option value="2025" selected>2025</option><option value="2026">2026</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button id="searchBtn" class="btn btn-primary w-100 fw-medium" onclick="executeSearch()" disabled>
+                        <span class="spinner-border spinner-border-sm me-1" role="status" id="searchLoading"></span>
+                        Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-content" id="myTabContent">
+
+        <div class="tab-pane fade show active" id="introPane">
+            <div class="table-container mx-auto mt-2" style="max-width: 900px;">
+                
+                <h3 class="text-primary mb-4 border-bottom pb-2">Methodology & Framework</h3>
+                
+                <div class="mb-5">
+                    <h5 class="fw-bold text-dark">1. The Problem with Medians</h5>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        The Sydney property market is highly heterogeneous. Comparing a 400 m² unrenovated lot to a 700 m² premium build in the exact same suburb is mathematically flawed if you rely solely on raw median price tracking. Median prices are easily skewed by the composition of sales in any given quarter (e.g., if more mansions sell than cottages, the median spikes artificially). 
+                    </p>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        This dashboard was built to establish a standardized, bivariate baseline. By decoupling land area and property "quality" into normalized Z-scores, we can isolate true localized market movements from the structural noise of individual asset variance.
+                    </p>
+                </div>
+
+                <div class="mb-5">
+                    <h5 class="fw-bold text-dark">2. Mathematical Basis</h5>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        Real estate pricing and land geometry naturally exhibit a severe positive skew, necessitating a log-normal transformation for accurate statistical modeling. Let \( P \) represent the sale price and \( A \) represent the land area. We define \( L = \ln(A) \).
+                    </p>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        For any given SA2 region and year, the natural log of the area (\( L \)) is distributed with mean \( \mu_L \) and standard deviation \( \sigma_L \). A property's Area Z-score is therefore:
+                    </p>
+                    <div class="bg-light p-3 rounded text-center mb-3 border">
+                        $$ Z_L = \frac{L - \mu_L}{\sigma_L} $$
+                    </div>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        The model assumes the final price is exponentially proportional to the log-area, scaled by a localized structural coefficient \( R \):
+                    </p>
+                    <div class="bg-light p-3 rounded text-center mb-3 border">
+                        $$ P = e^{R \cdot L} \times 1,000,000 $$
+                    </div>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        By reversing this formula on historical sales data, we derive the structural coefficient \( R \) for every sale. The distribution of \( R \) within an SA2 region gives us \( \mu_R \) and \( \sigma_R \). A property's Quality Z-score (\( Z_R \)) quantifies how many standard deviations its finish, view, or architecture sits above or below the regional baseline:
+                    </p>
+                    <div class="bg-light p-3 rounded text-center mb-4 border">
+                        $$ Z_R = \frac{R - \mu_R}{\sigma_R} $$
+                    </div>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        This framework allows us to project the fair value of a theoretical property at any point in time by recombining a target year's parameters with a property's fixed \( Z_L \) and estimated \( Z_R \).
+                    </p>
+                </div>
+
+                <div class="mb-5">
+                    <h5 class="fw-bold text-dark">3. Data Sourcing & Handling</h5>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        <strong>Sourcing:</strong> Historical sales records and raw pricing data are aggregated from the NSW Valuer General. Geographic coordinate mapping utilizes the Geocoded National Address File (G-NAF), which is then overlaid onto official NSW Spatial Services cadastral boundaries to ensure precise lot rendering.
+                    </p>
+                    <p class="text-muted" style="line-height: 1.7;">
+                        <strong>Handling:</strong> To maintain statistical integrity, the dataset is scrubbed of non-market transfers. High-density strata titles (apartments) and extreme geometric outliers (e.g., highly irregular zoning anomalies or split-blocks) are filtered prior to calculating regional parameters to prevent distribution skew.
+                    </p>
+                </div>
+
+                <div class="mb-4">
+                    <h5 class="fw-bold text-dark">4. Practical Application</h5>
+                    <div class="card border-0 bg-light shadow-sm">
+                        <div class="card-body p-4">
+                            <h6 class="fw-bold text-primary mb-3">Scenario: Evaluating a Premium Build in Hunters Hill</h6>
+                            <p class="text-muted mb-2" style="line-height: 1.7;">
+                                Imagine looking at a 500 m² block in Hunters Hill that recently underwent a high-end architectural renovation. Referencing the raw median sale price for Hunters Hill will not tell you if the asking price is mathematically fair for this specific caliber of home.
+                            </p>
+                            <ol class="text-muted mb-0" style="line-height: 1.7;">
+                                <li>We determine the <strong>Area Z-score (\( Z_L \))</strong> by comparing \( \ln(500) \) to the historical baseline parameters for the Hunters Hill SA2 region.</li>
+                                <li>We assign a <strong>Quality Z-score (\( Z_R \))</strong> of roughly \( +1.5 \) to reflect the premium architectural finishes (sitting in the top ~7% of regional stock).</li>
+                                <li>We feed these specific parameters into the <strong>Estimator Tab</strong> alongside the current year's \( \mu_R \) and \( \sigma_R \) values.</li>
+                            </ol>
+                            <p class="text-muted mt-3 mb-0" style="line-height: 1.7;">
+                                The resulting calculation provides an objective, baseline fair-value stripped of short-term market hysteria, allowing an analyst to accurately measure the premium being demanded.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <div class="tab-pane fade" id="sales">
+            <div class="table-container">
+                <div class="table-responsive">
+                    <table id="salesTable" class="table table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th class="sticky-left text-center">Rank</th>
+                                <th>Address</th>
+                                <th>Suburb</th>
+                                <th>SA2 Zone</th>
+                                <th>Land Area</th>
+                                <th>Sale Date</th>
+                                <th>Sale Price</th>
+                                <th>Area <br><span class="text-muted fw-normal" style="font-size: 0.7rem">Z-Score</span></th>
+                                <th>Quality <br><span class="text-muted fw-normal" style="font-size: 0.7rem">Z-Score</span></th>
+                                <th>2025 Est. Price <br><span class="text-muted fw-normal" style="font-size: 0.7rem">w/ 95% CI</span></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="mapView">
+            <div class="table-container p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h4 class="mb-0">Geospatial Heatmap</h4>
+                        <small class="text-muted">Filtering enabled: Displays <strong>most recent sale</strong> only. <br> Color scaled: <span class="text-danger fw-bold">Red (Bottom 5%)</span> to <span class="text-primary fw-bold">Deep Blue (Top 5%)</span>.</small>
+                    </div>
+                </div>
+                <div id="interactiveMap"></div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="suburbs">
+            <div class="table-container">
+                <h4 class="mb-1">Historical Averages (2007 - 2025)</h4>
+                
+                <div class="d-flex gap-4 mb-4 p-3 bg-light rounded-3 border align-items-center">
+                    <div class="form-check form-switch m-0">
+                        <input class="form-check-input" type="checkbox" id="hideLowVolumeToggle">
+                        <label class="form-check-label small" for="hideLowVolumeToggle"><strong>Volume Filter:</strong> Hide suburbs with any year &lt; 10 sales</label>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+                    <h5 class="text-primary m-0" id="suburbTableTitle">Mean Price</h5>
+                    <div class="btn-group shadow-sm" role="group" aria-label="Metric toggle">
+                        <input type="radio" class="btn-check" name="metricToggle" id="btnMean" autocomplete="off" checked>
+                        <label class="btn btn-outline-primary fw-medium px-4" for="btnMean">Mean</label>
+                        
+                        <input type="radio" class="btn-check" name="metricToggle" id="btnMedian" autocomplete="off">
+                        <label class="btn btn-outline-primary fw-medium px-4" for="btnMedian">Median</label>
+                    </div>
+                </div>
+
+                <div class="table-responsive" id="meanTableContainer">
+                    <table class="table table-bordered table-hover table-sm w-100" id="meanTable">
+                        <thead>
+                            <tr>
+                                <th class="sticky-left text-center">Rank</th><th class="sticky-left" style="left: 50px;">Suburb</th>
+                                <th>2007</th><th>2008</th><th>2009</th><th>2010</th><th>2011</th><th>2012</th><th>2013</th><th>2014</th>
+                                <th>2015</th><th>2016</th><th>2017</th><th>2018</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>2026</th>
+                            </tr>
+                        </thead>
+                        <tbody id="meanTableBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="table-responsive d-none" id="medianTableContainer">
+                    <table class="table table-bordered table-hover table-sm w-100" id="medianTable">
+                        <thead>
+                            <tr>
+                                <th class="sticky-left text-center">Rank</th><th class="sticky-left" style="left: 50px;">Suburb</th>
+                                <th>2007</th><th>2008</th><th>2009</th><th>2010</th><th>2011</th><th>2012</th><th>2013</th><th>2014</th>
+                                <th>2015</th><th>2016</th><th>2017</th><th>2018</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>2026</th>
+                            </tr>
+                        </thead>
+                        <tbody id="medianTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="regions">
+            <div class="table-container">
+                <div class="d-flex justify-content-between align-items-end mb-4 p-3 bg-light rounded-3 border">
+                    <div>
+                        <h4 class="mb-1">SA2 Bivariate Tracking Matrix</h4>
+                        <div class="form-check form-switch mt-2">
+                            <input class="form-check-input" type="checkbox" id="hideSkewedToggle">
+                            <label class="form-check-label small" for="hideSkewedToggle"><strong>Quality Filter:</strong> Hide n &lt; 30</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-bold text-uppercase text-muted">Analysis Year</label>
+                        <select id="regionYearSelect" class="form-select w-auto">
+                            <option value="2022">2026</option><option value="2025" selected>2025</option><option value="2024">2024</option><option value="2023">2023</option>
+                            <option value="2022">2022</option><option value="2021">2021</option><option value="2020">2020</option>
+                            <option value="2019">2019</option><option value="2018">2018</option><option value="2017">2017</option>
+                            <option value="2016">2016</option><option value="2015">2015</option><option value="2014">2014</option>
+                            <option value="2013">2013</option><option value="2012">2012</option><option value="2011">2011</option>
+                            <option value="2010">2010</option><option value="2009">2009</option><option value="2008">2008</option>
+                            <option value="2007">2007</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table id="regionTable" class="table table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th class="sticky-left text-center">Rank</th>
+                                <th class="sticky-left" style="left: 50px;">SA2 Region</th>
+                                <th title="Number of Sales">n</th>
+                                <th>Qual Z = -3</th>
+                                <th>Qual Z = -2</th>
+                                <th>Qual Z = -1</th>
+                                <th class="bg-primary bg-opacity-10">Qual Z = 0 (Mean) <br><span class="text-muted fw-normal" style="font-size:0.75rem">(Calculated at Area Z=0)</span></th>
+                                <th>Qual Z = 1</th>
+                                <th>Qual Z = 2</th>
+                                <th>Qual Z = 3</th>
+                            </tr>
+                        </thead>
+                        <tbody id="regionTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="calculator">
+            <div class="table-container mx-auto mt-4 shadow-sm" style="max-width: 800px;">
+                <h4 class="mb-3 text-center text-primary">Historical Property Estimator</h4>
+            
+                <div class="row g-3 mb-3">
+                    <div class="col-md-7 position-relative">
+                        <label class="form-label fw-bold text-muted small text-uppercase">SA2 Region</label>
+                        <input class="form-control" id="calcRegionInput" placeholder="Type to search region..." autocomplete="off">
+                        <div id="calcAutocompleteDropdown" class="dropdown-menu autocomplete-menu shadow-lg" style="display: none;"></div>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Target Year</label>
+                        <select id="calcYearSelect" class="form-select"></select>
+                    </div>
+                </div>
+            
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Land Area (sqm)</label>
+                        <input type="number" id="calcAreaInput" class="form-control" placeholder="e.g. 500">
+                        <div class="form-text">
+                            Area Z-Score (<span id="calcZScoreYearLabel">2025</span>): <strong id="calcAreaZScore" class="text-dark">-</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-muted small text-uppercase">Quality Z-Score</label>
+                        <input type="number" id="calcQualInput" class="form-control" step="0.1" placeholder="e.g. 1.5">
+                        <div class="form-text">Scale typically ranges from -3 (Poor) to +3 (Premium).</div>
+                    </div>
+                </div>
+            
+                <hr class="my-4">
+            
+                <div class="text-center pb-2">
+                    <h5 class="text-muted mb-1">Estimated Value (<span id="calcResultYearLabel">2025</span>)</h5>
+                    <h2 id="calcResultPrice" class="text-success fw-bold" style="font-size: 2.5rem;">-</h2>
+                </div>
+
+                <div class="chart-container mt-4" style="height: 320px;">
+                    <canvas id="calcEstimatorChartCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="suburbModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="suburbModalTitle">Suburb Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-sm text-center">
+                <thead class="table-light">
+                    <tr>
+                        <th class="sticky-left">Metric</th>
+                        <th>2007</th><th>2008</th><th>2009</th><th>2010</th><th>2011</th><th>2012</th><th>2013</th><th>2014</th>
+                        <th>2015</th><th>2016</th><th>2017</th><th>2018</th><th>2019</th><th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>2025</th><th>2026</th>
+                    </tr>
+                </thead>
+                <tbody id="suburbModalTableBody"></tbody>
+            </table>
+        </div>
+        <div class="chart-container"><canvas id="suburbChartCanvas"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="regionModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header d-flex justify-content-between align-items-center">
+        <h5 class="modal-title m-0" id="regionModalTitle">SA2 Bivariate Distribution Matrix</h5>
+        <div class="d-flex align-items-center ms-auto me-3 gap-2">
+            <label class="form-label small fw-bold text-uppercase text-muted m-0">Year</label>
+            <select id="matrixYearSelect" class="form-select form-select-sm w-auto"></select>
+        </div>
+        <button type="button" class="btn-close m-0" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4 bg-light">
+        <div class="row g-3">
+            <div class="col-xl-7">
+                <div class="table-responsive bg-white border rounded-3 p-3 shadow-sm h-100">
+                    <table class="table table-bordered table-sm text-center m-0" style="font-size: 0.85rem;">
+                        <thead id="matrixTableHeader"></thead>
+                        <tbody id="regionModalTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col-xl-5">
+                <div class="bg-white border rounded-3 p-3 shadow-sm h-100 d-flex flex-column">
+                    <h6 class="text-center fw-bold text-dark mb-1">Time-Series Comparison</h6>
+                    <p class="text-center text-muted small mb-3">Click up to 5 cells in the matrix to compare their historical trajectories.</p>
+                    <div class="chart-container flex-grow-1" style="min-height: 350px;">
+                        <canvas id="regionChartCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+    // You will get these exact values from your Firebase Console
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "your-project.firebaseapp.com",
+        projectId: "your-project-id",
+        storageBucket: "your-project.appspot.com",
+        messagingSenderId: "123456789",
+        appId: "1:123456789:web:abcde12345"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Attach a search function to the global window so your main script can use it
+    window.queryFirestoreLocations = async function(locationTag) {
+        try {
+            const salesRef = collection(db, "sales");
+            let q;
+
+            // Determine which field to query based on your tag type
+            if (locationTag.type === 'Suburb') {
+                q = query(salesRef, where("Suburb Name", "==", locationTag.text.toUpperCase()));
+            } else if (locationTag.type === 'SA2 Region') {
+                q = query(salesRef, where("SA2 Name", "==", locationTag.text));
+            } else {
+                // If it's a specific street or address, fetch the whole suburb and filter locally
+                // because Firestore doesn't easily do partial string matching on full addresses
+                let suburbExtracted = locationTag.text.split(',').pop().trim().toUpperCase();
+                q = query(salesRef, where("Suburb Name", "==", suburbExtracted));
+            }
+
+            const querySnapshot = await getDocs(q);
+            const results = [];
+            querySnapshot.forEach((doc) => {
+                results.push(doc.data());
+            });
+            return results;
+        } catch (error) {
+            console.error("Firebase Query Error:", error);
+            return [];
+        }
+    };
+</script>
+
+<script>
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        let tgt = $(e.target).attr("data-bs-target");
+        if(tgt === '#sales' || tgt === '#mapView') {
+            $('#searchPanel').slideDown(200);
+        } else {
+            $('#searchPanel').slideUp(200);
+        }
+    });
+
+    const formatCurrency = (val) => new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD', maximumFractionDigits: 0 }).format(val);
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        let s = String(dateStr).trim();
+        if (s.endsWith('.0')) s = s.slice(0, -2);
+        if (s.includes('/')) return s;
+        if (s.includes('-')) {
+            let p = s.split('-');
+            return p[0].length === 4 ? `${p[2]}/${p[1]}/${p[0]}` : s;
+        }
+        if (s.length >= 8) return `${s.substring(6,8)}/${s.substring(4,6)}/${s.substring(0,4)}`;
+        return s;
+    };
+    const formatShortCurrency = (val) => {
+        if (val == null) return '-';
+        if (val >= 1000000) return '$' + (val / 1000000).toFixed(2) + 'm';
+        if (val >= 1000) return '$' + Math.round(val / 1000) + 'k';
+        return '$' + Math.round(val);
+    };
+
+    let suburbChartInstance = null;
+    const YEARS = [2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+
+    let masterSalesData = [];
+    let searchGlobalIndex = []; 
+    let salesDataTableInstance = null;
+    
+    let theMap = null;
+    let mapMarkers = [];
+
+    function initMap() {
+        theMap = L.map('interactiveMap', { preferCanvas: true }).setView([-33.8688, 151.2093], 10);
+        
+        // 1. Your existing CARTO basemap
+        const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+            subdomains: 'abcd', maxZoom: 20
+        });
+
+        // 2. Custom ESRI REST Layer to strictly enforce Lot Outlines (Layer 9) without WMS label fallback
+        L.TileLayer.EsriCadastre = L.TileLayer.extend({
+            getTileUrl: function (coords) {
+                const z = coords.z;
+                const tileSize = this.getTileSize().x;
+                
+                // Calculate the pixel bounds for the tile
+                const nwPoint = coords.multiplyBy(tileSize);
+                const sePoint = nwPoint.add(L.point(tileSize, tileSize));
+                
+                // Convert pixels to LatLng, then project to EPSG:3857 (Web Mercator meters)
+                const crs = this._map.options.crs;
+                const nw = crs.project(this._map.unproject(nwPoint, z));
+                const se = crs.project(this._map.unproject(sePoint, z));
+                
+                // ESRI bbox format: xmin, ymin, xmax, ymax
+                const bbox = [nw.x, se.y, se.x, nw.y].join(',');
+                
+                // Request ONLY layer 9 directly from the REST /export endpoint
+                return `https://maps.six.nsw.gov.au/arcgis/rest/services/public/NSW_Cadastre/MapServer/export?dpi=96&transparent=true&format=png32&layers=show:9&bbox=${bbox}&bboxSR=3857&imageSR=3857&size=${tileSize},${tileSize}&f=image`;
+            }
+        });
+
+        const nswCadastre = new L.TileLayer.EsriCadastre('', {
+            attribution: '&copy; NSW Spatial Services',
+            minZoom: 16, // Pushed to 16 to ensure we are within the strict 1:10000 server limit
+            maxZoom: 22
+        });
+
+        cartoLight.addTo(theMap);
+
+        const baseMaps = { "Standard Map": cartoLight };
+        const overlayMaps = { "Property Outlines": nswCadastre };
+
+        L.control.layers(baseMaps, overlayMaps, {position: 'topright'}).addTo(theMap);
+
+        $('button[data-bs-target="#mapView"]').on('shown.bs.tab', function () {
+            theMap.invalidateSize();
+        });
+    }
+
+    async function updateMapAsync(filteredData) {
+        mapMarkers.forEach(m => theMap.removeLayer(m));
+        mapMarkers = [];
+        if (filteredData.length === 0) return;
+
+        let uniqueMapData = [];
+        let seenAddresses = new Set();
+        
+        filteredData.forEach(row => {
+            const address = `${row['Street Number'] || ''} ${row['Street Name'] || ''} ${row['Suburb Name'] || ''}`.trim();
+            if (!seenAddresses.has(address)) {
+                seenAddresses.add(address);
+                uniqueMapData.push(row);
+            }
+        });
+
+        let prices = uniqueMapData.map(d => parseFloat(d['Est_Sale_Price'])).filter(v => !isNaN(v));
+        prices.sort((a, b) => a - b);
+        if (prices.length === 0) return;
+
+        function getPercentile(val) {
+            let low = 0, high = prices.length - 1;
+            while (low <= high) {
+                let mid = (low + high) >>> 1;
+                if (prices[mid] < val) low = mid + 1;
+                else if (prices[mid] > val) high = mid - 1;
+                else return mid / prices.length;
+            }
+            return low / prices.length;
+        }
+
+        let coordGroups = {};
+        uniqueMapData.forEach(row => {
+            if (!row.Latitude || !row.Longitude || isNaN(row.Latitude) || isNaN(row.Longitude)) return;
+            const key = `${row.Latitude}_${row.Longitude}`;
+            if (!coordGroups[key]) coordGroups[key] = [];
+            coordGroups[key].push(row);
+        });
+
+        let markerTasks = [];
+        Object.values(coordGroups).forEach(group => {
+            const numPoints = group.length;
+            const radiusOffset = numPoints > 1 ? 0.00012 : 0; 
+            group.forEach((row, index) => {
+                markerTasks.push({ row, numPoints, radiusOffset, index });
+            });
+        });
+
+        let bounds = L.latLngBounds();
+        const CHUNK_SIZE = 1500;
+
+        for (let i = 0; i < markerTasks.length; i += CHUNK_SIZE) {
+            let chunk = markerTasks.slice(i, i + CHUNK_SIZE);
+
+            chunk.forEach(task => {
+                const row = task.row;
+                const predPrice = parseFloat(row['Est_Sale_Price']);
+                if (isNaN(predPrice)) return;
+
+                let lat = row.Latitude;
+                let lon = row.Longitude;
+
+                if (task.numPoints > 1) {
+                    const angle = (Math.PI * 2 * task.index) / task.numPoints;
+                    lat += task.radiusOffset * Math.cos(angle);
+                    lon += task.radiusOffset * Math.sin(angle) * 1.2; 
+                }
+
+                const norm = getPercentile(predPrice);
+                const hue = norm * 240; 
+                const color = `hsl(${hue}, 100%, 45%)`;
+
+                const marker = L.circleMarker([lat, lon], {
+                    radius: 5, fillColor: color, color: '#ffffff', weight: 1, opacity: 1, fillOpacity: 0.85
+                });
+
+                const address = `${row['Street Number'] || ''} ${row['Street Name'] || ''}`.trim();
+                const actualPrice = formatCurrency(row['Sale Price']);
+                const estPrice = formatCurrency(predPrice);
+                const landSize = Math.round(row['Land Size (sqm)']);
+                
+                const zA = row['Z_L'] != null ? row['Z_L'] : '-';
+                const zQ = row['Z_R'] != null ? row['Z_R'] : '-';
+
+                marker.bindTooltip(`
+                    <div style="min-width: 170px;">
+                        <h6 class="mb-1 text-primary">${address}</h6>
+                        <small class="text-muted fw-bold">${row['Suburb Name']}</small>
+                        <hr class="my-1">
+                        <div class="d-flex justify-content-between">
+                            <small>Latest Sale Year:</small>
+                            <small class="fw-bold">${row['Sale Year']}</small>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small>Land Area:</small>
+                            <small class="fw-bold">${landSize} m²</small>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small>Area / Qual (Z):</small>
+                            <small class="fw-bold">${zA} / ${zQ}</small>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <small>Actual Price:</small>
+                            <small class="fw-bold">${actualPrice}</small>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1 pt-1 border-top">
+                            <small class="text-success fw-bold">2025 Value:</small>
+                            <small class="text-success fw-bold">${estPrice}</small>
+                        </div>
+                    </div>
+                `);
+
+                marker.addTo(theMap);
+                mapMarkers.push(marker);
+                bounds.extend([lat, lon]);
+            });
+            await new Promise(resolve => requestAnimationFrame(resolve));
+        }
+        if (mapMarkers.length > 0) {
+            theMap.fitBounds(bounds, { padding: [30, 30] });
+        }
+    }
+
+    let activeTags = [];
+    const locationInput = document.getElementById('searchLocationInput');
+    const tagContainer = document.getElementById('suburbTagContainer');
+    const dropdownMenu = document.getElementById('autocompleteDropdown');
+    let currentFocus = -1;
+
+    tagContainer.addEventListener('click', () => locationInput.focus());
+
+    function buildSearchIndex() {
+        let seen = new Set();
+        searchGlobalIndex = [];
+        
+        masterSalesData.forEach(row => {
+            let sub = row['Suburb Name'];
+            let sa2 = row['SA2 Name'] ? row['SA2 Name'].toUpperCase() : null;
+            let st = row['Street Name'];
+            let stNum = row['Street Number'];
+            
+            if (sa2 && !seen.has('sa2_'+sa2)) { seen.add('sa2_'+sa2); searchGlobalIndex.push({text: sa2, type: 'SA2 Region'}); }
+            if (sub && !seen.has('sub_'+sub)) { seen.add('sub_'+sub); searchGlobalIndex.push({text: sub, type: 'Suburb'}); }
+            
+            if (st && sub) {
+                let stSub = `${st}, ${sub}`;
+                if (!seen.has('st_'+stSub)) { seen.add('st_'+stSub); searchGlobalIndex.push({text: stSub, type: 'Street'}); }
+            }
+            if (stNum && st && sub) {
+                let fullAddr = `${stNum} ${st}, ${sub}`;
+                if (!seen.has('addr_'+fullAddr)) { 
+                    seen.add('addr_'+fullAddr); 
+                    searchGlobalIndex.push({text: fullAddr, type: 'Address'}); 
+                }
+            }
+        });
+    }
+
+    function getTagClass(type) {
+        if (type === 'Address') return 'tag-address';
+        if (type === 'Street') return 'tag-street';
+        if (type === 'SA2 Region') return 'tag-sa2';
+        return 'tag-suburb';
+    }
+
+    function getBadgeColor(type) {
+        if (type === 'Address') return 'warning';
+        if (type === 'Street') return 'success';
+        if (type === 'SA2 Region') return 'danger';
+        return 'primary';
+    }
+
+    locationInput.addEventListener('input', function() {
+        const val = this.value.toUpperCase();
+        dropdownMenu.innerHTML = '';
+        currentFocus = -1;
+        
+        if (!val) { dropdownMenu.style.display = 'none'; return; }
+        
+        // 1. Make filtering case-insensitive
+        let matches = searchGlobalIndex.filter(item => {
+            const itemTextUpper = item.text.toUpperCase();
+            if (item.type === 'Address' || item.type === 'Street') {
+                return itemTextUpper.startsWith(val);
+            }
+            return itemTextUpper.includes(val);
+        });
+
+        // 2. Apply sorting hierarchy
+        const typeWeight = { 'SA2 Region': 1, 'Suburb': 2, 'Street': 3, 'Address': 4 };
+        
+        matches.sort((a, b) => {
+            // Priority 1: Exact matches
+            const aExact = a.text.toUpperCase() === val;
+            const bExact = b.text.toUpperCase() === val;
+            if (aExact && !bExact) return -1;
+            if (bExact && !aExact) return 1;
+
+            // Priority 2: Location Type Hierarchy
+            if (typeWeight[a.type] !== typeWeight[b.type]) {
+                return typeWeight[a.type] - typeWeight[b.type];
+            }
+
+            // Priority 3: Alphabetical tie-breaker
+            return a.text.localeCompare(b.text);
+        });
+
+        matches = matches.slice(0, 40);
+        
+        if (matches.length === 0) { dropdownMenu.style.display = 'none'; return; }
+        
+        matches.forEach((match, i) => {
+            let div = document.createElement('div');
+            div.className = 'dropdown-item d-flex justify-content-between align-items-center py-2 border-bottom';
+            div.innerHTML = `<span class="text-truncate fw-medium pe-2">${match.text}</span> <span class="badge bg-${getBadgeColor(match.type)} ms-auto">${match.type}</span>`;
+            div.onclick = () => addTag(match);
+            dropdownMenu.appendChild(div);
+        });
+        dropdownMenu.style.display = 'block';
+    });
+
+    locationInput.addEventListener('keydown', function(e) {
+        let items = dropdownMenu.getElementsByClassName('dropdown-item');
+        if (e.key === 'ArrowDown') {
+            currentFocus++;
+            addActive(items);
+        } else if (e.key === 'ArrowUp') {
+            currentFocus--;
+            addActive(items);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (currentFocus > -1 && items.length > 0) {
+                items[currentFocus].click();
+            } else if (items.length > 0) {
+                items[0].click(); 
+            }
+        } else if (e.key === 'Backspace' && locationInput.value === '' && activeTags.length > 0) {
+            removeTag(activeTags[activeTags.length - 1].text);
+        }
+    });
+
+    function addActive(x) {
+        if (!x) return false;
+        for (let i = 0; i < x.length; i++) x[i].classList.remove("active");
+        if (currentFocus >= x.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = (x.length - 1);
+        x[currentFocus].classList.add("active");
+        x[currentFocus].scrollIntoView({block: 'nearest'});
+    }
+
+    function addTag(matchObj) {
+        if (!activeTags.find(t => t.text === matchObj.text && t.type === matchObj.type)) {
+            activeTags.push(matchObj);
+            renderTags();
+        }
+        locationInput.value = '';
+        dropdownMenu.style.display = 'none';
+        locationInput.focus();
+    }
+
+    function renderTags() {
+        tagContainer.querySelectorAll('.search-tag').forEach(tag => tag.remove());
+        activeTags.forEach(tagObj => {
+            const tagEl = document.createElement('div');
+            tagEl.className = `search-tag ${getTagClass(tagObj.type)}`;
+            tagEl.innerHTML = `${tagObj.text} <span onclick="removeTag('${tagObj.text}')">&times;</span>`;
+            tagContainer.insertBefore(tagEl, locationInput);
+        });
+        locationInput.placeholder = activeTags.length > 0 ? "Add another location..." : "e.g. 5 ARABELLA ST, HUNTERS HILL";
+    }
+
+    window.removeTag = function(textToRemove) {
+        activeTags = activeTags.filter(t => t.text !== textToRemove);
+        renderTags();
+    };
+
+    document.addEventListener('click', function(e) {
+        if (!tagContainer.contains(e.target) && e.target !== dropdownMenu) {
+            dropdownMenu.style.display = 'none';
+        }
+    });
+
+    function initDataTable() {
+        salesDataTableInstance = $('#salesTable').DataTable({
+            data: [],
+            deferRender: true, 
+            pageLength: 25,
+            order: [[1, 'asc']], 
+            columns: [
+                { data: null, defaultContent: '', orderable: false, searchable: false, className: 'sticky-left fw-bold text-center text-muted bg-light' },
+                { 
+                    data: null, 
+                    render: function(data, type) { 
+                        let stNum = data['Street Number'] || '';
+                        let stName = data['Street Name'] || '';
+                        if (type === 'sort') {
+                            let numMatch = stNum.match(/\d+/);
+                            let numStr = numMatch ? String(numMatch[0]).padStart(10, '0') : '0000000000';
+                            return `${stName} ${numStr} ${stNum}`;
+                        }
+                        return `${stNum} ${stName}`.trim(); 
+                    }
+                },
+                { data: 'Suburb Name' },
+                { data: 'SA2 Name', render: data => data === null ? '<span class="text-muted">Unmapped</span>' : data },
+                { 
+                    data: 'Land Size (sqm)', 
+                    render: function(data, type) {
+                        if (data == null || isNaN(data)) return '<span class="text-muted">-</span>';
+                        return type === 'display' ? `${new Intl.NumberFormat('en-AU').format(Math.round(data))} m²` : data;
+                    }
+                },
+                { data: 'Sale Date', render: function(data, type) { 
+                    return type === 'display' || type === 'filter' ? formatDate(data) : data; 
+                }},
+                { data: 'Sale Price', render: function(data, type) { 
+                    return type === 'display' ? `<span class="fw-medium">${formatCurrency(data)}</span>` : data; 
+                }},
+                { data: 'Z_L', render: function(data, type) {
+                    if (data == null) return '<span class="text-muted">-</span>';
+                    return type === 'display' ? `<span class="${data > 0 ? 'text-primary' : (data < 0 ? 'text-danger' : 'text-muted')}">${data.toFixed(2)}</span>` : data;
+                }},
+                { data: 'Z_R', render: function(data, type) {
+                    if (data == null) return '<span class="text-muted">-</span>';
+                    return type === 'display' ? `<span class="${data > 0 ? 'text-primary' : (data < 0 ? 'text-danger' : 'text-muted')}">${data.toFixed(2)}</span>` : data;
+                }},
+                { data: null, render: function(data, type) { 
+                    let estRaw = parseFloat(data['Est_Sale_Price']);
+                    let minRaw = parseFloat(data['Est_Sale_Price_Min']);
+                    let maxRaw = parseFloat(data['Est_Sale_Price_Max']);
+                    
+                    if (type !== 'display') return isNaN(estRaw) ? 0 : estRaw;
+                    if (isNaN(estRaw)) return '<span class="text-muted">-</span>';
+                    
+                    let html = `<span class="fw-medium text-success">${formatCurrency(estRaw)}</span>`;
+                    if (!isNaN(minRaw) && !isNaN(maxRaw)) {
+                        html += `<br><small class="text-muted" style="font-size: 0.75rem;">${formatShortCurrency(minRaw)} &ndash; ${formatShortCurrency(maxRaw)}</small>`;
+                    }
+                    return html;
+                }}
+            ]
+        });
+
+        salesDataTableInstance.on('draw.dt', function () {
+            salesDataTableInstance.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                cell.innerHTML = i + 1;
+            });
+        });
+    }
+
+    async function loadMasterDatabase() {
+    initDataTable(); 
+    initMap(); 
+
+    document.getElementById('searchBtn').disabled = false;
+    document.getElementById('searchLoading').classList.add('d-none');
+    
+    }
+
+    function executeSearch() {
+        $('#searchLoading').removeClass('d-none');
+        $('#searchBtn').prop('disabled', true);
+
+        setTimeout(async () => {
+            const minPrice = parseFloat(document.getElementById('searchMinPrice').value) || 0;
+            const maxPrice = parseFloat(document.getElementById('searchMaxPrice').value) || Infinity;
+            const yearFrom = parseInt(document.getElementById('searchYearFrom').value);
+            const yearTo = parseInt(document.getElementById('searchYearTo').value);
+
+            const filteredData = masterSalesData.filter(row => {
+                if (activeTags.length > 0) {
+                    let tagMatch = false;
+                    for (let tag of activeTags) {
+                        const tagUpper = tag.text.toUpperCase();
+                        
+                        if (tag.type === 'Suburb' && row['Suburb Name'] && row['Suburb Name'].toUpperCase() === tagUpper) { tagMatch = true; break; }
+                        if (tag.type === 'SA2 Region' && row['SA2 Name'] && row['SA2 Name'].toUpperCase() === tagUpper) { tagMatch = true; break; }
+                        if (tag.type === 'Street' && row['Street Name'] && row['Suburb Name'] && `${row['Street Name']}, ${row['Suburb Name']}`.toUpperCase() === tagUpper) { tagMatch = true; break; }
+                        if (tag.type === 'Address' && row['Street Number'] && row['Street Name'] && row['Suburb Name'] && `${row['Street Number']} ${row['Street Name']}, ${row['Suburb Name']}`.toUpperCase() === tagUpper) { tagMatch = true; break; }
+                    }
+                    if (!tagMatch) return false;
+                }
+                if (row['Sale Price'] < minPrice || row['Sale Price'] > maxPrice) return false;
+                if (row['Sale Year'] < yearFrom || row['Sale Year'] > yearTo) return false;
+                return true;
+            });
+
+            salesDataTableInstance.clear();
+            salesDataTableInstance.rows.add(filteredData);
+            salesDataTableInstance.draw();
+            
+            await updateMapAsync(filteredData);
+
+            $('#searchLoading').addClass('d-none');
+            $('#searchBtn').prop('disabled', false);
+        }, 50);
+    }
+
+    document.querySelectorAll('.search-panel input, .search-panel select').forEach(el => {
+        el.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !document.getElementById('searchBtn').disabled) {
+                if (e.target.id === 'searchLocationInput' && e.target.value.trim() !== '') return; 
+                executeSearch();
+            }
+        });
+    });
+
+    let suburbMasterData = null; 
+    let regionMasterData = null;
+    let currentSelectedRegion = null;
+
+    const safeFetch = async (url) => {
+        try {
+            let r = await fetch(url);
+            if (r.ok) {
+                let j = await r.json();
+                return Array.isArray(j) ? j : [];
+            }
+        } catch(e) {}
+        return [];
+    };
+
+    async function loadAnalyticsData() {
+        suburbMasterData = {}; 
+        regionMasterData = {};
+
+        const subPromises = YEARS.map(year => safeFetch(`Suburb Data/${year}_suburb_data.json`).then(data => {
+            data.forEach(row => {
+                if (!row['suburb']) return;
+                let sub = row['suburb'].trim().toUpperCase();
+                if (!suburbMasterData[sub]) suburbMasterData[sub] = {}; 
+                suburbMasterData[sub][year] = { mean: row['mean P'], median: row['median P'], n: row['n'] };
+            });
+        }));
+        
+        const regPromises = YEARS.map(year => safeFetch(`Region Data/${year}_regional_data.json`).then(data => {
+            data.forEach(row => {
+                if (!row['region']) return;
+                let reg = row['region'].trim().toUpperCase();
+                if (!regionMasterData[reg]) regionMasterData[reg] = {};
+                regionMasterData[reg][year] = { 
+                    mu_R: row['mu_R'], sigma_R: row['sigma_R'], n: row['n'] || 0,
+                    mu_L: row['mu_L'], sigma_L: row['sigma_L']
+                };
+            });
+        }));
+
+        await Promise.all([...subPromises, ...regPromises]);
+        renderSuburbTables();
+        renderRegionTable();
+        populateCalculator();
+    }
+
+    function renderSuburbTables() {
+        let isStrict = $('#hideLowVolumeToggle').is(':checked');
+
+        if ($.fn.DataTable.isDataTable('#meanTable')) {
+            $('#meanTable').DataTable().destroy();
+            $('#medianTable').DataTable().destroy();
+        }
+
+        const meanBody = document.getElementById('meanTableBody');
+        const medianBody = document.getElementById('medianTableBody');
+        meanBody.innerHTML = ''; medianBody.innerHTML = '';
+
+        Object.keys(suburbMasterData).sort().forEach(sub => {
+            if (isStrict) {
+                let passes = YEARS.every(y => suburbMasterData[sub][y] && suburbMasterData[sub][y].n >= 10);
+                if (!passes) return;
+            }
+
+            let trMean = document.createElement('tr');
+            let trMedian = document.createElement('tr');
+            trMean.className = 'clickable-row'; trMedian.className = 'clickable-row';
+            
+            let safeSubStr = sub.replace(/'/g, "\\'");
+            trMean.setAttribute('onclick', `openSuburbModal('${safeSubStr}')`);
+            trMedian.setAttribute('onclick', `openSuburbModal('${safeSubStr}')`);
+
+            trMean.innerHTML = `<td class="sticky-left text-center text-muted fw-bold bg-light"></td><td class="sticky-left" style="left: 50px;"><strong>${sub}</strong></td>`;
+            trMedian.innerHTML = `<td class="sticky-left text-center text-muted fw-bold bg-light"></td><td class="sticky-left" style="left: 50px;"><strong>${sub}</strong></td>`;
+
+            let hasValidData = false;
+
+            YEARS.forEach(year => {
+                let data = suburbMasterData[sub][year];
+                if (data && data.n > 0 && data.mean != null) {
+                    hasValidData = true; 
+                    let bgColor = `hsl(${Math.min((data.n / 100) * 120, 120)}, 80%, 90%)`;
+                    trMean.innerHTML += `<td data-order="${data.mean || 0}" style="background-color: ${bgColor}">${formatCurrency(data.mean)} <br><small class="text-muted">(n=${data.n})</small></td>`;
+                    trMedian.innerHTML += `<td data-order="${data.median || 0}" style="background-color: ${bgColor}">${formatCurrency(data.median)} <br><small class="text-muted">(n=${data.n})</small></td>`;
+                } else {
+                    trMean.innerHTML += `<td data-order="0" class="text-center align-middle text-muted">-</td>`;
+                    trMedian.innerHTML += `<td data-order="0" class="text-center align-middle text-muted">-</td>`;
+                }
+            });
+
+            if (hasValidData) {
+                meanBody.appendChild(trMean);
+                medianBody.appendChild(trMedian);
+            }
+        });
+
+        // Change the default sorting column from 20 to 21 (which corresponds to the 2026 column)
+        // Note: It will sort by 2026, but if 2026 is null/empty for a suburb, DataTables handles it gracefully.
+        let meanDt = $('#meanTable').DataTable({ pageLength: 25, order: [[21, 'desc']] }); 
+        let medDt = $('#medianTable').DataTable({ pageLength: 25, order: [[21, 'desc']] });
+
+        meanDt.on('draw.dt', function () { meanDt.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) { cell.innerHTML = i + 1; }); }).draw();
+        medDt.on('draw.dt', function () { medDt.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) { cell.innerHTML = i + 1; }); }).draw();
+    }
+
+    function renderRegionTable() {
+        if ($.fn.DataTable.isDataTable('#regionTable')) $('#regionTable').DataTable().destroy();
+
+        const tbody = document.getElementById('regionTableBody');
+        tbody.innerHTML = ''; 
+        let hideSkewed = $('#hideSkewedToggle').is(':checked');
+        let selYear = parseInt($('#regionYearSelect').val()) || 2025;
+
+        Object.keys(regionMasterData).sort().forEach(reg => {
+            let d = regionMasterData[reg][selYear];
+            if (!d || d.mu_R == null || d.mu_L == null) return;
+            if (hideSkewed && d.n < 30) return;
+
+            let tr = document.createElement('tr');
+            tr.className = 'clickable-row';
+            let safeRegStr = reg.replace(/'/g, "\\'");
+            tr.setAttribute('onclick', `openRegionMatrix('${safeRegStr}', ${selYear})`);
+
+            tr.innerHTML = `
+                <td class="sticky-left text-center text-muted fw-bold bg-light"></td>
+                <td class="sticky-left" style="left: 50px;"><strong>${reg}</strong></td>
+                <td data-order="${d.n}">${d.n}</td>
+            `;
+
+            const z_vals = [-3, -2, -1, 0, 1, 2, 3];
+            z_vals.forEach(zr => {
+                let R = (zr * d.sigma_R) + d.mu_R;
+                // Area Z=0 means L = mu_L
+                let estMeanP = Math.exp(R * d.mu_L) * 1000000;
+                
+                let formatting = (zr === 0) ? `class="bg-primary bg-opacity-10 fw-medium text-success" data-order="${estMeanP}"` : `data-order="${estMeanP}"`;
+                tr.innerHTML += `<td ${formatting}>${formatShortCurrency(estMeanP)}</td>`;
+            });
+
+            tbody.appendChild(tr);
+        });
+        
+        let regDt = $('#regionTable').DataTable({ pageLength: 50, order: [[6, 'desc']] }); 
+
+        regDt.on('draw.dt', function () {
+            regDt.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) {
+                cell.innerHTML = i + 1;
+            });
+        }).draw();
+    }
+
+    function openSuburbModal(suburb) {
+        document.getElementById('suburbModalTitle').innerText = `${suburb} - Historical Tracking`;
+        let tBody = document.getElementById('suburbModalTableBody');
+        tBody.innerHTML = '';
+        
+        let means = [], medians = [], volumes = [];
+        YEARS.forEach(year => {
+            let data = suburbMasterData[suburb][year];
+            if(data && data.n > 0) {
+                means.push(data.mean); medians.push(data.median); volumes.push(data.n);
+            } else {
+                means.push(null); medians.push(null); volumes.push(0);
+            }
+        });
+
+        const allPrices = [...means, ...medians].filter(v => v !== null && v > 0);
+        let minLog = 0, maxLog = 0;
+        if (allPrices.length > 0) {
+            minLog = Math.log(Math.min(...allPrices));
+            maxLog = Math.log(Math.max(...allPrices));
+        }
+        
+        const getCellBg = (val) => {
+            if (val == null || val <= 0) return '#e5e7eb'; 
+            const norm = maxLog === minLog ? 0.5 : (Math.log(val) - minLog) / (maxLog - minLog);
+            return `hsl(${norm * 120}, 70%, 90%)`; 
+        };
+
+        const getVolumeBg = (n) => {
+            if (!n) return '#e5e7eb';
+            const norm = Math.min(n / 100, 1); 
+            return `hsl(300, 80%, ${100 - (norm * 15)}%)`; 
+        };
+
+        let trMean = document.createElement('tr'); trMean.innerHTML = '<td class="sticky-left bg-light"><strong>Mean Price</strong></td>';
+        let trMed = document.createElement('tr'); trMed.innerHTML = '<td class="sticky-left bg-light"><strong>Median Price</strong></td>';
+        let trVol = document.createElement('tr'); trVol.innerHTML = '<td class="sticky-left bg-light"><strong>Volume (n)</strong></td>';
+
+        YEARS.forEach((year, i) => {
+            let mean = means[i], median = medians[i], vol = volumes[i];
+            
+            if(vol > 0) {
+                trMean.innerHTML += `<td style="background-color: ${getCellBg(mean)}">${formatShortCurrency(mean)}</td>`;
+                trMed.innerHTML += `<td style="background-color: ${getCellBg(median)}">${formatShortCurrency(median)}</td>`;
+                trVol.innerHTML += `<td style="background-color: ${getVolumeBg(vol)}">${vol}</td>`;
+            } else {
+                trMean.innerHTML += `<td class="text-muted" style="background-color: #e5e7eb;">-</td>`;
+                trMed.innerHTML += `<td class="text-muted" style="background-color: #e5e7eb;">-</td>`;
+                trVol.innerHTML += `<td class="text-muted" style="background-color: #e5e7eb;">0</td>`;
+            }
+        });
+        
+        tBody.appendChild(trMean); tBody.appendChild(trMed); tBody.appendChild(trVol);
+
+        if(suburbChartInstance) suburbChartInstance.destroy();
+        const ctx = document.getElementById('suburbChartCanvas').getContext('2d');
+        suburbChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: YEARS,
+                datasets: [
+                    { label: 'Mean Price', data: means, borderColor: '#dc2626', backgroundColor: '#dc2626', tension: 0, borderWidth: 2, pointRadius: 4, pointStyle: 'line', yAxisID: 'y' },
+                    { label: 'Median Price', data: medians, borderColor: '#2563eb', backgroundColor: '#2563eb', tension: 0, borderWidth: 2, pointRadius: 4, pointStyle: 'line', yAxisID: 'y' },
+                    { label: 'Sales Volume', data: volumes, type: 'bar', backgroundColor: 'rgba(156, 163, 175, 0.4)', pointStyle: 'rect', yAxisID: 'y1' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { labels: { usePointStyle: true, boxWidth: 12 } },
+                    tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + (context.dataset.type === 'bar' ? context.parsed.y : formatCurrency(context.parsed.y)); } } }
+                },
+                scales: {
+                    y: { type: 'linear', display: true, position: 'left', beginAtZero: true, title: { display: true, text: 'Price ($)'} },
+                    y1: { type: 'linear', display: true, position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Volume (n)'} }
+                }
+            }
+        });
+        new bootstrap.Modal(document.getElementById('suburbModal')).show();
+    }
+
+    function openRegionMatrix(region, initialYear) {
+        currentSelectedRegion = region;
+        document.getElementById('regionModalTitle').innerText = `${region} - Bivariate Matrix`;
+        
+        let sel = document.getElementById('matrixYearSelect');
+        sel.innerHTML = '';
+        YEARS.slice().reverse().forEach(y => {
+            let opt = document.createElement('option');
+            opt.value = y; opt.text = y;
+            if(y === initialYear) opt.selected = true;
+            sel.appendChild(opt);
+        });
+
+        // Reset to default mean cell and render
+        activeMatrixCells = new Set(['0,0']);
+        renderMatrixContent(region, initialYear);
+        drawRegionChart(region);
+        
+        new bootstrap.Modal(document.getElementById('regionModal')).show();
+    }
+
+    function renderMatrixContent(region, year) {
+        let thead = document.getElementById('matrixTableHeader');
+        let tbody = document.getElementById('regionModalTableBody');
+        
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        let d = regionMasterData[region][year];
+        if(!d || d.n === 0 || isNaN(d.mu_R)) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-5">No Data Available for ${year}</td></tr>`;
+            return;
+        }
+
+        const z_vals = [3, 2, 1, 0, -1, -2, -3]; 
+        
+        let minP = Math.exp((-3 * d.sigma_R + d.mu_R) * (-3 * d.sigma_L + d.mu_L)) * 1000000;
+        let maxP = Math.exp((3 * d.sigma_R + d.mu_R) * (3 * d.sigma_L + d.mu_L)) * 1000000;
+        let minLog = Math.log(minP), maxLog = Math.log(maxP);
+
+        let trHeadTop = document.createElement('tr');
+        trHeadTop.innerHTML = `
+            <th rowspan="2" colspan="2" class="align-middle border-0 bg-white"></th>
+            <th colspan="7" class="bg-dark text-white rounded-top">Z-Score of Log Area (Regional Baseline)</th>
+        `;
+        thead.appendChild(trHeadTop);
+
+        let trHeadBot = document.createElement('tr');
+        trHeadBot.className = 'bg-light';
+        [...z_vals].reverse().forEach(zl => {
+            let area_sqm = Math.exp((zl * d.sigma_L) + d.mu_L);
+            trHeadBot.innerHTML += `<th class="py-2">Z=${zl} <br><small class="text-muted fw-normal" style="font-size: 0.75rem;">(${Math.round(area_sqm)} m²)</small></th>`;
+        });
+        thead.appendChild(trHeadBot);
+
+        [...z_vals].reverse().forEach(zl => {
+                let R = (zr * d.sigma_R) + d.mu_R;
+                let L = (zl * d.sigma_L) + d.mu_L;
+                
+                let P = Math.exp(R * L) * 1000000; 
+                
+                let norm = maxLog === minLog ? 0.5 : (Math.log(P) - minLog) / (maxLog - minLog);
+                let color = `hsl(${norm * 120}, 70%, 90%)`;
+                
+                let isActive = activeMatrixCells.has(`${zl},${zr}`);
+                let borderClass = isActive ? 'border border-dark border-2 shadow-sm opacity-100' : 'opacity-75';
+                if (isActive) color = `hsl(${norm * 120}, 80%, 75%)`; // Darken slightly if active
+                
+                let safeRegStr = region.replace(/'/g, "\\'");
+                
+                tr.innerHTML += `<td style="background-color: ${color}; min-width: 90px; cursor: pointer;" 
+                                     class="matrix-cell py-3 ${borderClass} transition-all" 
+                                     onclick="toggleMatrixCell(${zl}, ${zr}, '${safeRegStr}')">
+                                     <span class="${isActive ? 'fw-bold text-dark' : 'text-muted'}">${formatShortCurrency(P)}</span>
+                                 </td>`;
+            });
+    }
+
+    $(document).on('change', '#matrixYearSelect', function() {
+        if(currentSelectedRegion) renderMatrixContent(currentSelectedRegion, parseInt(this.value));
+    });
+
+    let calcChartInstance = null;
+
+    // --- Bivariate Matrix & Chart Logic ---
+    let regionChartInstance = null;
+    let activeMatrixCells = new Set(['0,0']); 
+
+    function openRegionMatrix(region, initialYear) {
+        currentSelectedRegion = region;
+        document.getElementById('regionModalTitle').innerText = `${region} - Bivariate Matrix`;
+        
+        let sel = document.getElementById('matrixYearSelect');
+        sel.innerHTML = '';
+        YEARS.slice().reverse().forEach(y => {
+            let opt = document.createElement('option');
+            opt.value = y; opt.text = y;
+            if(y === initialYear) opt.selected = true;
+            sel.appendChild(opt);
+        });
+
+        // Reset to default mean cell and render
+        activeMatrixCells = new Set(['0,0']);
+        renderMatrixContent(region, initialYear);
+        drawRegionChart(region);
+        
+        new bootstrap.Modal(document.getElementById('regionModal')).show();
+    }
+
+    function renderMatrixContent(region, year) {
+        let thead = document.getElementById('matrixTableHeader');
+        let tbody = document.getElementById('regionModalTableBody');
+        
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        let d = regionMasterData[region][year];
+        if(!d || d.n === 0 || isNaN(d.mu_R)) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-5">No Data Available for ${year}</td></tr>`;
+            return;
+        }
+
+        const z_vals = [3, 2, 1, 0, -1, -2, -3]; 
+        
+        let minP = Math.exp((-3 * d.sigma_R + d.mu_R) * (-3 * d.sigma_L + d.mu_L)) * 1000000;
+        let maxP = Math.exp((3 * d.sigma_R + d.mu_R) * (3 * d.sigma_L + d.mu_L)) * 1000000;
+        let minLog = Math.log(minP), maxLog = Math.log(maxP);
+
+        let trHeadTop = document.createElement('tr');
+        trHeadTop.innerHTML = `
+            <th rowspan="2" colspan="2" class="align-middle border-0 bg-white"></th>
+            <th colspan="7" class="bg-dark text-white rounded-top">Z-Score of Log Area (Regional Baseline)</th>
+        `;
+        thead.appendChild(trHeadTop);
+
+        let trHeadBot = document.createElement('tr');
+        trHeadBot.className = 'bg-light';
+        [...z_vals].reverse().forEach(zl => {
+            let area_sqm = Math.exp((zl * d.sigma_L) + d.mu_L);
+            trHeadBot.innerHTML += `<th class="py-2">Z=${zl} <br><small class="text-muted fw-normal" style="font-size: 0.75rem;">(${Math.round(area_sqm)} m²)</small></th>`;
+        });
+        thead.appendChild(trHeadBot);
+
+        z_vals.forEach((zr, idx) => {
+            let tr = document.createElement('tr');
+            
+            if (idx === 0) {
+                tr.innerHTML += `<td rowspan="7" class="bg-dark text-white align-middle px-2 rounded-start" style="writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.1em; font-size: 0.75rem; text-transform: uppercase;"><strong>Z-Score Log Ratio (Regional Base)</strong></td>`;
+            }
+            
+            tr.innerHTML += `<th class="bg-light align-middle">Z=${zr}</th>`;
+            
+            [...z_vals].reverse().forEach(zl => {
+                let R = (zr * d.sigma_R) + d.mu_R;
+                let L = (zl * d.sigma_L) + d.mu_L;
+                let P = Math.exp(R * L) * 1000000; 
+                
+                let norm = maxLog === minLog ? 0.5 : (Math.log(P) - minLog) / (maxLog - minLog);
+                let color = `hsl(${norm * 120}, 70%, 90%)`;
+                
+                let isActive = activeMatrixCells.has(`${zl},${zr}`);
+                let borderClass = isActive ? 'border border-dark border-2 shadow-sm opacity-100' : 'opacity-75';
+                if (isActive) color = `hsl(${norm * 120}, 80%, 75%)`; 
+                
+                let safeRegStr = region.replace(/'/g, "\\'");
+                
+                tr.innerHTML += `<td style="background-color: ${color}; min-width: 90px; cursor: pointer;" 
+                                     class="matrix-cell py-3 ${borderClass} transition-all" 
+                                     onclick="toggleMatrixCell(${zl}, ${zr}, '${safeRegStr}')">
+                                     <span class="${isActive ? 'fw-bold text-dark' : 'text-muted'}">${formatShortCurrency(P)}</span>
+                                 </td>`;
+            });
+            tbody.appendChild(tr);
+        });
+    }
+
+    function drawRegionChart(region) {
+        if (regionChartInstance) regionChartInstance.destroy();
+        const ctx = document.getElementById('regionChartCanvas').getContext('2d');
+
+        let datasets = [];
+        const colors = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea'];
+        let colorIdx = 0;
+
+        activeMatrixCells.forEach(key => {
+            let parts = key.split(',');
+            let zl = parseInt(parts[0]);
+            let zr = parseInt(parts[1]);
+            let dataPoints = [];
+
+            YEARS.forEach(y => {
+                let d = regionMasterData[region][y];
+                if (d && d.mu_R != null) {
+                    let R = (zr * d.sigma_R) + d.mu_R;
+                    let L = (zl * d.sigma_L) + d.mu_L;
+                    let P = Math.exp(R * L) * 1000000;
+                    dataPoints.push(P);
+                } else {
+                    dataPoints.push(null);
+                }
+            });
+
+            datasets.push({
+                label: `Area Z=${zl}, Qual Z=${zr}`,
+                data: dataPoints,
+                borderColor: colors[colorIdx % colors.length],
+                backgroundColor: colors[colorIdx % colors.length],
+                tension: 0.1, borderWidth: 2.5, pointRadius: 3
+            });
+            colorIdx++;
+        });
+
+        regionChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels: YEARS, datasets: datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { size: 11 } } },
+                    tooltip: { callbacks: { label: function(c) { return c.dataset.label + ': ' + formatCurrency(c.parsed.y); } } }
+                },
+                scales: {
+                    y: { ticks: { callback: function(val) { return formatShortCurrency(val); } } }
+                }
+            }
+        });
+    }
+
+    window.toggleMatrixCell = function(zl, zr, region) {
+        let key = `${zl},${zr}`;
+        if (activeMatrixCells.has(key)) {
+            if (activeMatrixCells.size > 1) activeMatrixCells.delete(key); 
+        } else {
+            if (activeMatrixCells.size < 5) activeMatrixCells.add(key); 
+            else alert("Maximum 5 comparisons allowed."); 
+        }
+        renderMatrixContent(region, parseInt(document.getElementById('matrixYearSelect').value));
+        drawRegionChart(region);
+    };
+    // --- End Bivariate Matrix Logic ---
+
+function populateCalculator() {
+    const yearSelect = document.getElementById('calcYearSelect');
+    yearSelect.innerHTML = '';
+    [...YEARS].reverse().forEach(y => {
+        let opt = document.createElement('option');
+        opt.value = y;
+        opt.text = y;
+        if (y === 2025) opt.selected = true;
+        yearSelect.appendChild(opt);
+    });
+}
+
+function runCalculator() {
+    const reg = document.getElementById('calcRegionInput').value;
+    const areaStr = document.getElementById('calcAreaInput').value;
+    const qualStr = document.getElementById('calcQualInput').value;
+    const targetYear = parseInt(document.getElementById('calcYearSelect').value) || 2025;
+    
+    const resEl = document.getElementById('calcResultPrice');
+    const zLEl = document.getElementById('calcAreaZScore');
+
+    document.getElementById('calcZScoreYearLabel').innerText = targetYear;
+    document.getElementById('calcResultYearLabel').innerText = targetYear;
+
+    if (!reg || !areaStr || !qualStr || !regionMasterData[reg]) {
+        resEl.innerText = '-';
+        zLEl.innerText = '-';
+        if (calcChartInstance) calcChartInstance.destroy();
+        return;
+    }
+
+    const area = parseFloat(areaStr);
+    const zR = parseFloat(qualStr); 
+    
+    if (area <= 0) return;
+
+    // 1. Point-in-time calculation for the UI readouts
+    const dTarget = regionMasterData[reg][targetYear];
+    const L = Math.log(area);
+    
+    if (dTarget && dTarget.mu_L != null) {
+        let zL = 0;
+        if (dTarget.sigma_L > 0) zL = (L - dTarget.mu_L) / dTarget.sigma_L;
+        
+        zLEl.innerText = zL.toFixed(2);
+        zLEl.className = zL > 0 ? 'text-primary' : (zL < 0 ? 'text-danger' : 'text-dark');
+        
+        const estR = (zR * dTarget.sigma_R) + dTarget.mu_R;
+        const estP = Math.exp(estR * L) * 1000000;
+        resEl.innerText = formatCurrency(estP);
+    } else {
+        resEl.innerText = 'No Data';
+        zLEl.innerText = '-';
+    }
+
+    // 2. Generate Time Series Data for the Chart
+    let historicalPrices = [];
+    let validYears = [];
+    
+    YEARS.forEach(y => {
+        const dy = regionMasterData[reg][y];
+        if (dy && dy.mu_R != null) {
+            const estRy = (zR * dy.sigma_R) + dy.mu_R;
+            const py = Math.exp(estRy * L) * 1000000;
+            historicalPrices.push(py);
+            validYears.push(y);
+        } else {
+            historicalPrices.push(null);
+            validYears.push(y);
+        }
+    });
+
+    // 3. Render the Chart
+    if (calcChartInstance) calcChartInstance.destroy();
+    const ctx = document.getElementById('calcEstimatorChartCanvas').getContext('2d');
+    
+    // Highlight the selected year's data point
+    const pointRadii = validYears.map(y => y === targetYear ? 7 : 3);
+    const pointColors = validYears.map(y => y === targetYear ? '#047857' : '#10b981');
+
+    calcChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: validYears,
+            datasets: [{
+                label: `Estimated Value`,
+                data: historicalPrices,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.1,
+                borderWidth: 2,
+                pointRadius: pointRadii,
+                pointBackgroundColor: pointColors,
+                pointBorderColor: '#fff',
+                pointBorderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: { 
+                    callbacks: { 
+                        label: function(context) { 
+                            return formatCurrency(context.parsed.y); 
+                        } 
+                    } 
+                }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: false, 
+                    ticks: { callback: function(val) { return formatShortCurrency(val); } } 
+                }
+            }
+        }
+    });
+}
+
+// --- Estimator Autocomplete Logic ---
+const calcRegionInput = document.getElementById('calcRegionInput');
+const calcDropdown = document.getElementById('calcAutocompleteDropdown');
+let calcCurrentFocus = -1;
+
+calcRegionInput.addEventListener('input', function() {
+    const val = this.value.toUpperCase();
+    calcDropdown.innerHTML = '';
+    calcCurrentFocus = -1;
+
+    if (!val) { calcDropdown.style.display = 'none'; return; }
+
+    // Filter available SA2s from regionMasterData
+    let sa2Regions = Object.keys(regionMasterData);
+    let matches = sa2Regions.filter(reg => reg.toUpperCase().includes(val));
+
+    // Sort exact matches first, then alphabetical
+    matches.sort((a, b) => {
+        const aExact = a.toUpperCase() === val;
+        const bExact = b.toUpperCase() === val;
+        if (aExact && !bExact) return -1;
+        if (bExact && !aExact) return 1;
+        return a.localeCompare(b);
+    });
+
+    matches = matches.slice(0, 40);
+
+    if (matches.length === 0) { calcDropdown.style.display = 'none'; return; }
+
+    matches.forEach((match) => {
+        let div = document.createElement('div');
+        div.className = 'dropdown-item py-2 border-bottom';
+        div.innerHTML = `<span class="fw-medium">${match}</span>`;
+        div.onclick = () => {
+            calcRegionInput.value = match;
+            calcDropdown.style.display = 'none';
+            runCalculator(); 
+        };
+        calcDropdown.appendChild(div);
+    });
+    
+    calcDropdown.style.display = 'block';
+});
+
+calcRegionInput.addEventListener('keydown', function(e) {
+    let items = calcDropdown.getElementsByClassName('dropdown-item');
+    if (e.key === 'ArrowDown') {
+        calcCurrentFocus++;
+        updateCalcActive(items);
+    } else if (e.key === 'ArrowUp') {
+        calcCurrentFocus--;
+        updateCalcActive(items);
+    } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (calcCurrentFocus > -1 && items.length > 0) {
+            items[calcCurrentFocus].click();
+        } else if (items.length > 0) {
+            items[0].click();
+        }
+    }
+});
+
+function updateCalcActive(x) {
+    if (!x) return false;
+    for (let i = 0; i < x.length; i++) x[i].classList.remove("active");
+    if (calcCurrentFocus >= x.length) calcCurrentFocus = 0;
+    if (calcCurrentFocus < 0) calcCurrentFocus = (x.length - 1);
+    x[calcCurrentFocus].classList.add("active");
+    x[calcCurrentFocus].scrollIntoView({block: 'nearest'});
+}
+
+// Close dropdown if clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target !== calcRegionInput && e.target !== calcDropdown) {
+        calcDropdown.style.display = 'none';
+    }
+});
+
+// Attach event listeners for real-time calculation
+$(document).on('input change', '#calcRegionInput, #calcYearSelect, #calcAreaInput, #calcQualInput', runCalculator);
+
+    $(document).ready(function() {
+        $(document).on('change', '#hideLowVolumeToggle', renderSuburbTables);
+        $(document).on('change', '#hideSkewedToggle', renderRegionTable);
+        $(document).on('change', '#regionYearSelect', renderRegionTable);
+        loadMasterDatabase(); 
+        loadAnalyticsData();
+        $('input[name="metricToggle"]').on('change', function() {
+                if ($('#btnMean').is(':checked')) {
+                    $('#meanTableContainer').removeClass('d-none');
+                    $('#medianTableContainer').addClass('d-none');
+                    $('#suburbTableTitle').text('Mean Price');
+                    if ($.fn.DataTable.isDataTable('#meanTable')) {
+                        $('#meanTable').DataTable().columns.adjust();
+                    }
+                } else {
+                    $('#meanTableContainer').addClass('d-none');
+                    $('#medianTableContainer').removeClass('d-none');
+                    $('#suburbTableTitle').text('Median Price');
+                    if ($.fn.DataTable.isDataTable('#medianTable')) {
+                        $('#medianTable').DataTable().columns.adjust();
+                    }
+                }
+            });
+    });
+</script>
+</body>
+</html>
