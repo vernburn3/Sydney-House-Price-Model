@@ -73,6 +73,21 @@
         .clickable-row:hover { background-color: #f0fdf4 !important; }
         
         .matrix-cell:hover { opacity: 0.8; transform: scale(1.05); cursor: crosshair; }
+
+        :root {
+          --bg-color: #ffffff;
+          --text-color: #333333;
+        }
+        
+        [data-theme="dark"] {
+          --bg-color: #121212;
+          --text-color: #e0e0e0;
+        }
+        
+        body {
+          background-color: var(--bg-color);
+          color: var(--text-color);
+        }
     </style>
 </head>
 <body>
@@ -82,11 +97,11 @@
     
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item"><button class="nav-link active" id="intro-tab" data-bs-toggle="tab" data-bs-target="#introPane" type="button">📖 Introduction</button></li>
-        <li class="nav-item"><button class="nav-link" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button">1. Database Search</button></li>
-        <li class="nav-item"><button class="nav-link fw-bold text-primary" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapView" type="button">🌍 Interactive Map</button></li>
-        <li class="nav-item"><button class="nav-link" id="suburbs-tab" data-bs-toggle="tab" data-bs-target="#suburbs" type="button">2. Suburb Time-Series</button></li>
-        <li class="nav-item"><button class="nav-link" id="regions-tab" data-bs-toggle="tab" data-bs-target="#regions" type="button">3. SA2 Bivariate Tracking</button></li>
-        <li class="nav-item"><button class="nav-link fw-bold text-success" id="calculator-tab" data-bs-toggle="tab" data-bs-target="#calculator" type="button">🧮 Estimator</button>
+        <li class="nav-item"><button class="nav-link" id="sales-tab" data-bs-toggle="tab" data-bs-target="#sales" type="button">Database Search</button></li>
+        <li class="nav-item"><button class="nav-link fw-bold text-primary" id="map-tab" data-bs-toggle="tab" data-bs-target="#mapView" type="button">Interactive Map</button></li>
+        <li class="nav-item"><button class="nav-link" id="suburbs-tab" data-bs-toggle="tab" data-bs-target="#suburbs" type="button">Suburb Data</button></li>
+        <li class="nav-item"><button class="nav-link" id="regions-tab" data-bs-toggle="tab" data-bs-target="#regions" type="button">SA2 Bivariate Data</button></li>
+        <li class="nav-item"><button class="nav-link fw-bold text-success" id="calculator-tab" data-bs-toggle="tab" data-bs-target="#calculator" type="button">Estimator</button>
 </li>
     </ul>
 
@@ -572,7 +587,13 @@
             subdomains: 'abcd', maxZoom: 20
         });
 
-        // 2. Custom ESRI REST Layer to strictly enforce Lot Outlines (Layer 9) without WMS label fallback
+        // 2. NEW: Esri Satellite Imagery Layer
+        const esriSatellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+            maxZoom: 20
+        });
+
+        // 3. Custom ESRI REST Layer to strictly enforce Lot Outlines (Layer 9) without WMS label fallback
         L.TileLayer.EsriCadastre = L.TileLayer.extend({
             getTileUrl: function (coords) {
                 const z = coords.z;
@@ -601,13 +622,21 @@
             maxZoom: 22
         });
 
+        // 4. Set the default layer that appears when the map loads
         cartoLight.addTo(theMap);
 
-        const baseMaps = { "Standard Map": cartoLight };
-        const overlayMaps = { "Property Outlines": nswCadastre };
+        // 5. Update controls to include the new Satellite layer
+        const baseMaps = { 
+            "Standard Map": cartoLight,
+            "Satellite": esriSatellite // Added here as an alternative base map
+        };
+        const overlayMaps = { 
+            "Property Outlines": nswCadastre 
+        };
 
         L.control.layers(baseMaps, overlayMaps, {position: 'topright'}).addTo(theMap);
 
+        // 6. Fix for Bootstrap tabs
         $('button[data-bs-target="#mapView"]').on('shown.bs.tab', function () {
             theMap.invalidateSize();
         });
