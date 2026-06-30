@@ -88,12 +88,66 @@
           background-color: var(--bg-color);
           color: var(--text-color);
         }
+
+        /* --- Comprehensive Dark Mode Overrides --- */
+        [data-theme="dark"] .table-container,
+        [data-theme="dark"] .search-panel,
+        [data-theme="dark"] .modal-content,
+        [data-theme="dark"] .table-responsive,
+        [data-theme="dark"] .dropdown-menu {
+            background-color: #1e1e1e !important;
+            border-color: #333 !important;
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] .table > thead > tr > th,
+        [data-theme="dark"] .sticky-left,
+        [data-theme="dark"] .modal-header,
+        [data-theme="dark"] .bg-light,
+        [data-theme="dark"] .bg-white {
+            background-color: #2a2a2a !important;
+            color: #e0e0e0 !important;
+            border-color: #444 !important;
+        }
+        
+        [data-theme="dark"] .table td, 
+        [data-theme="dark"] .table th {
+            border-bottom-color: #333 !important;
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] h2,
+        [data-theme="dark"] h3,
+        [data-theme="dark"] h4,
+        [data-theme="dark"] h5,
+        [data-theme="dark"] .text-dark {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link:not(.active) {
+            color: #a0a0a0;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link:hover {
+            color: #ffffff;
+        }
+        
+        [data-theme="dark"] .tag-container,
+        [data-theme="dark"] input.form-control,
+        [data-theme="dark"] select.form-select {
+            background-color: #2a2a2a;
+            border-color: #444;
+            color: #e0e0e0;
+        }
     </style>
 </head>
 <body>
 
 <div class="container-fluid px-4">
-    <h2>Property Baseline Dashboard</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0">Property Baseline Dashboard</h2>
+        <button id="darkModeToggle" class="btn btn-outline-secondary btn-sm">🌙 Dark Mode</button>
+    </div>
     
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item"><button class="nav-link active" id="intro-tab" data-bs-toggle="tab" data-bs-target="#introPane" type="button">📖 Introduction</button></li>
@@ -647,10 +701,14 @@
         mapMarkers = [];
         if (filteredData.length === 0) return;
 
+        // NEW: Sort the data so the newest sales are processed first
+        let sortedData = [...filteredData].sort((a, b) => b['Sale Year'] - a['Sale Year']);
+
         let uniqueMapData = [];
         let seenAddresses = new Set();
         
-        filteredData.forEach(row => {
+        // Loop through the newly sorted data instead of filteredData
+        sortedData.forEach(row => {
             const address = `${row['Street Number'] || ''} ${row['Street Name'] || ''} ${row['Suburb Name'] || ''}`.trim();
             if (!seenAddresses.has(address)) {
                 seenAddresses.add(address);
@@ -1744,6 +1802,27 @@ $(document).on('input change', '#calcRegionInput, #calcYearSelect, #calcAreaInpu
                 }
             });
     });
+
+// --- Dark Mode Logic ---
+const themeToggleBtn = document.getElementById('darkModeToggle');
+
+// Check if user previously selected dark mode
+if (localStorage.getItem('theme') === 'dark') {
+    document.body.setAttribute('data-theme', 'dark');
+    themeToggleBtn.innerText = '☀️ Light Mode';
+}
+
+themeToggleBtn.addEventListener('click', () => {
+    if (document.body.getAttribute('data-theme') === 'dark') {
+        document.body.removeAttribute('data-theme');
+        localStorage.setItem('theme', 'light');
+        themeToggleBtn.innerText = '🌙 Dark Mode';
+    } else {
+        document.body.setAttribute('data-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+        themeToggleBtn.innerText = '☀️ Light Mode';
+    }
+});
 </script>
 </body>
 </html>
