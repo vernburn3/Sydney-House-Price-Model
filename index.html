@@ -473,7 +473,7 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
     import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
-    // You will get these exact values from your Firebase Console
+    // IMPORTANT: Make sure these are your actual keys!
     const firebaseConfig = {
       apiKey: "AIzaSyAXzTTJmcmT9LCtG70xCrUujdi77Bf85MA",
       authDomain: "sydney-house-price-model.firebaseapp.com",
@@ -486,6 +486,13 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // HELPER FUNCTION: Converts "SPRING FARM" to "Spring Farm" so Firestore can match it
+    function toTitleCase(str) {
+        return str.replace(/\w\S*/g, function(txt) {
+            return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+        });
+    }
+
     // Attach a search function to the global window so your main script can use it
     window.queryFirestoreLocations = async function(locationTag) {
         try {
@@ -496,10 +503,9 @@
             if (locationTag.type === 'Suburb') {
                 q = query(salesRef, where("Suburb Name", "==", locationTag.text.toUpperCase()));
             } else if (locationTag.type === 'SA2 Region') {
-                q = query(salesRef, where("SA2 Name", "==", locationTag.text));
+                // WE APPLY THE TITLE CASE FIX HERE:
+                q = query(salesRef, where("SA2 Name", "==", toTitleCase(locationTag.text)));
             } else {
-                // If it's a specific street or address, fetch the whole suburb and filter locally
-                // because Firestore doesn't easily do partial string matching on full addresses
                 let suburbExtracted = locationTag.text.split(',').pop().trim().toUpperCase();
                 q = query(salesRef, where("Suburb Name", "==", suburbExtracted));
             }
