@@ -189,6 +189,37 @@
         .table td {
             color: var(--heatmap-text) !important;
         }
+
+        /* Fix 1: Search Bar Headers */
+        [data-theme="dark"] .search-panel label.text-muted {
+            color: #a0a0a0 !important;
+        }
+        
+        /* Fix 2: Suburb Table sample size (n=X) */
+        [data-theme="dark"] .table-responsive small.text-muted {
+            color: #d1d5db !important; /* Lighter grey for better contrast on colored backgrounds */
+        }
+        
+        /* Fix 3: Bivariate Table (White areas to dark) */
+        [data-theme="dark"] .table-responsive,
+        [data-theme="dark"] .table {
+            background-color: #1e1e1e !important;
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] .table td, 
+        [data-theme="dark"] .table th {
+            background-color: transparent !important; /* Forces cells to inherit the dark background */
+        }
+        
+        [data-theme="dark"] .bg-white {
+            background-color: #1e1e1e !important;
+        }
+        
+        /* Optional: Slightly dim the blue "Mean" column in the Bivariate Matrix so it fits the theme better */
+        [data-theme="dark"] #regionTable .bg-primary.bg-opacity-10 {
+            background-color: rgba(13, 110, 253, 0.15) !important;
+        }
     </style>
 </head>
 <body>
@@ -910,7 +941,7 @@
             }
             return itemTextUpper.includes(val);
         });
-
+    
         // 2. Apply sorting hierarchy
         const typeWeight = { 'SA2 Region': 1, 'Suburb': 2, 'Street': 3, 'Address': 4 };
         
@@ -920,16 +951,16 @@
             const bExact = b.text.toUpperCase() === val;
             if (aExact && !bExact) return -1;
             if (bExact && !aExact) return 1;
-
+    
             // Priority 2: Location Type Hierarchy
             if (typeWeight[a.type] !== typeWeight[b.type]) {
                 return typeWeight[a.type] - typeWeight[b.type];
             }
-
+    
             // Priority 3: Alphabetical tie-breaker
             return a.text.localeCompare(b.text);
         });
-
+    
         matches = matches.slice(0, 40);
         
         if (matches.length === 0) { dropdownMenu.style.display = 'none'; return; }
