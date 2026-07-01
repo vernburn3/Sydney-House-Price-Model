@@ -73,142 +73,12 @@
         .clickable-row:hover { background-color: #f0fdf4 !important; }
         
         .matrix-cell:hover { opacity: 0.8; transform: scale(1.05); cursor: crosshair; }
-
-        :root {
-          --bg-color: #ffffff;
-          --text-color: #333333;
-        }
-        
-        [data-theme="dark"] {
-          --bg-color: #121212;
-          --text-color: #e0e0e0;
-        }
-        
-        body {
-          background-color: var(--bg-color);
-          color: var(--text-color);
-        }
-
-        /* --- Comprehensive Dark Mode Overrides --- */
-        [data-theme="dark"] .table-container,
-        [data-theme="dark"] .search-panel,
-        [data-theme="dark"] .modal-content,
-        [data-theme="dark"] .table-responsive,
-        [data-theme="dark"] .dropdown-menu {
-            background-color: #1e1e1e !important;
-            border-color: #333 !important;
-            color: #e0e0e0 !important;
-        }
-        
-        [data-theme="dark"] .table > thead > tr > th,
-        [data-theme="dark"] .sticky-left,
-        [data-theme="dark"] .modal-header,
-        [data-theme="dark"] .bg-light,
-        [data-theme="dark"] .bg-white {
-            background-color: #2a2a2a !important;
-            color: #e0e0e0 !important;
-            border-color: #444 !important;
-        }
-        
-        [data-theme="dark"] .table td, 
-        [data-theme="dark"] .table th {
-            border-bottom-color: #333 !important;
-            color: #e0e0e0 !important;
-        }
-        
-        [data-theme="dark"] h2,
-        [data-theme="dark"] h3,
-        [data-theme="dark"] h4,
-        [data-theme="dark"] h5,
-        [data-theme="dark"] .text-dark {
-            color: #ffffff !important;
-        }
-        
-        [data-theme="dark"] .nav-tabs .nav-link:not(.active) {
-            color: #a0a0a0;
-        }
-        
-        [data-theme="dark"] .nav-tabs .nav-link:hover {
-            color: #ffffff;
-        }
-        
-        [data-theme="dark"] .tag-container,
-        [data-theme="dark"] input.form-control,
-        [data-theme="dark"] select.form-select {
-            background-color: #2a2a2a;
-            border-color: #444;
-            color: #e0e0e0;
-        }
-
-        /* Fix Search Inputs & Selects */
-        [data-theme="dark"] #searchPanel input.form-control,
-        [data-theme="dark"] #searchPanel select.form-select,
-        [data-theme="dark"] .tag-container {
-            background-color: #2a2a2a !important;
-            color: #ffffff !important;
-            border-color: #444 !important;
-        }
-        
-        /* Fix the Autocomplete Dropdown */
-        [data-theme="dark"] .autocomplete-menu {
-            background-color: #1e1e1e;
-            border-color: #333;
-        }
-        [data-theme="dark"] .dropdown-item {
-            color: #e0e0e0;
-            border-bottom: 1px solid #333 !important;
-        }
-        [data-theme="dark"] .dropdown-item:hover,
-        [data-theme="dark"] .dropdown-item.active {
-            background-color: #2a2a2a;
-            color: #ffffff;
-        }
-        
-        /* Fix Introduction Page Text */
-        [data-theme="dark"] #introPane .text-dark,
-        [data-theme="dark"] #introPane h5 {
-            color: #ffffff !important;
-        }
-        [data-theme="dark"] #introPane .text-muted,
-        [data-theme="dark"] .search-panel label.text-muted,
-        [data-theme="dark"] #mapView .text-muted {
-            color: #a0a0a0 !important;
-        }
-        [data-theme="dark"] #introPane .bg-light {
-            background-color: #1e1e1e !important;
-            border-color: #333 !important;
-        }
-
-        /* Fix Suburb Table sample size (n=X) */
-        [data-theme="dark"] .table-responsive small.text-muted {
-            color: #d1d5db !important; 
-        }
-        
-        /* Fix Bivariate Table (White areas to dark) */
-        [data-theme="dark"] .table-responsive,
-        [data-theme="dark"] .table {
-            background-color: #1e1e1e !important;
-            color: #e0e0e0 !important;
-        }
-        [data-theme="dark"] .table td, 
-        [data-theme="dark"] .table th {
-            background-color: transparent !important; 
-        }
-        [data-theme="dark"] .bg-white {
-            background-color: #1e1e1e !important;
-        }
-        [data-theme="dark"] #regionTable .bg-primary.bg-opacity-10 {
-            background-color: rgba(13, 110, 253, 0.15) !important;
-        }
     </style>
 </head>
 <body>
 
 <div class="container-fluid px-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="m-0">Sydney House Price Model</h2>
-        <button id="darkModeToggle" class="btn btn-outline-secondary btn-sm">Dark Mode</button>
-    </div>
+    <h2 class="mb-4">Sydney House Price Model</h2>
     
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item"><button class="nav-link active fw-bold text-primary" id="intro-tab" data-bs-toggle="tab" data-bs-target="#introPane" type="button">Introduction</button></li>
@@ -1204,8 +1074,6 @@
 
     function renderSuburbTables() {
         let isStrict = $('#hideLowVolumeToggle').is(':checked');
-        let isDark = document.body.getAttribute('data-theme') === 'dark';
-        let bgLightness = isDark ? 25 : 90; // Dynamically checks theme
 
         if ($.fn.DataTable.isDataTable('#meanTable')) {
             $('#meanTable').DataTable().destroy();
@@ -1239,9 +1107,9 @@
                 let data = suburbMasterData[sub][year];
                 if (data && data.n > 0 && data.mean != null) {
                     hasValidData = true; 
-                    let bgColor = `hsl(${Math.min((data.n / 100) * 120, 120)}, 80%, ${bgLightness}%)`;
-                    trMean.innerHTML += `<td data-order="${data.mean || 0}" style="background-color: ${bgColor}; color: ${isDark ? '#e0e0e0' : 'inherit'}">${formatCurrency(data.mean)} <br><small class="text-muted">(n=${data.n})</small></td>`;
-                    trMedian.innerHTML += `<td data-order="${data.median || 0}" style="background-color: ${bgColor}; color: ${isDark ? '#e0e0e0' : 'inherit'}">${formatCurrency(data.median)} <br><small class="text-muted">(n=${data.n})</small></td>`;
+                    let bgColor = `hsl(${Math.min((data.n / 100) * 120, 120)}, 80%, 90%)`;
+                    trMean.innerHTML += `<td data-order="${data.mean || 0}" style="background-color: ${bgColor}">${formatCurrency(data.mean)} <br><small class="text-muted">(n=${data.n})</small></td>`;
+                    trMedian.innerHTML += `<td data-order="${data.median || 0}" style="background-color: ${bgColor}">${formatCurrency(data.median)} <br><small class="text-muted">(n=${data.n})</small></td>`;
                 } else {
                     trMean.innerHTML += `<td data-order="0" class="text-center align-middle text-muted">-</td>`;
                     trMedian.innerHTML += `<td data-order="0" class="text-center align-middle text-muted">-</td>`;
@@ -1259,6 +1127,154 @@
 
         meanDt.on('draw.dt', function () { meanDt.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) { cell.innerHTML = i + 1; }); }).draw();
         medDt.on('draw.dt', function () { medDt.column(0, {search:'applied', order:'applied'}).nodes().each(function (cell, i) { cell.innerHTML = i + 1; }); }).draw();
+    }
+
+    function openSuburbModal(suburb) {
+        document.getElementById('suburbModalTitle').innerText = `${suburb} - Historical Tracking`;
+        let tBody = document.getElementById('suburbModalTableBody');
+        tBody.innerHTML = '';
+
+        let means = [], medians = [], volumes = [];
+        YEARS.forEach(year => {
+            let data = suburbMasterData[suburb][year];
+            if(data && data.n > 0) {
+                means.push(data.mean); medians.push(data.median); volumes.push(data.n);
+            } else {
+                means.push(null); medians.push(null); volumes.push(0);
+            }
+        });
+
+        const allPrices = [...means, ...medians].filter(v => v !== null && v > 0);
+        let minLog = 0, maxLog = 0;
+        if (allPrices.length > 0) {
+            minLog = Math.log(Math.min(...allPrices));
+            maxLog = Math.log(Math.max(...allPrices));
+        }
+        
+        const getCellBg = (val) => {
+            if (val == null || val <= 0) return '#e5e7eb'; 
+            const norm = maxLog === minLog ? 0.5 : (Math.log(val) - minLog) / (maxLog - minLog);
+            return `hsl(${norm * 120}, 70%, 90%)`; 
+        };
+
+        const getVolumeBg = (n) => {
+            if (!n) return '#e5e7eb';
+            const norm = Math.min(n / 100, 1); 
+            return `hsl(300, 80%, ${100 - (norm * 15)}%)`; 
+        };
+
+        let trMean = document.createElement('tr'); trMean.innerHTML = '<td class="sticky-left bg-light"><strong>Mean Price</strong></td>';
+        let trMed = document.createElement('tr'); trMed.innerHTML = '<td class="sticky-left bg-light"><strong>Median Price</strong></td>';
+        let trVol = document.createElement('tr'); trVol.innerHTML = '<td class="sticky-left bg-light"><strong>Volume (n)</strong></td>';
+
+        YEARS.forEach((year, i) => {
+            let mean = means[i], median = medians[i], vol = volumes[i];
+            
+            if(vol > 0) {
+                trMean.innerHTML += `<td style="background-color: ${getCellBg(mean)}">${formatShortCurrency(mean)}</td>`;
+                trMed.innerHTML += `<td style="background-color: ${getCellBg(median)}">${formatShortCurrency(median)}</td>`;
+                trVol.innerHTML += `<td style="background-color: ${getVolumeBg(vol)}">${vol}</td>`;
+            } else {
+                trMean.innerHTML += `<td class="text-muted" style="background-color: #e5e7eb;">-</td>`;
+                trMed.innerHTML += `<td class="text-muted" style="background-color: #e5e7eb;">-</td>`;
+                trVol.innerHTML += `<td class="text-muted" style="background-color: #e5e7eb;">0</td>`;
+            }
+        });
+        
+        tBody.appendChild(trMean); tBody.appendChild(trMed); tBody.appendChild(trVol);
+
+        if(suburbChartInstance) suburbChartInstance.destroy();
+        const ctx = document.getElementById('suburbChartCanvas').getContext('2d');
+        suburbChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: YEARS,
+                datasets: [
+                    { label: 'Mean Price', data: means, borderColor: '#dc2626', backgroundColor: '#dc2626', tension: 0, borderWidth: 2, pointRadius: 4, pointStyle: 'line', yAxisID: 'y' },
+                    { label: 'Median Price', data: medians, borderColor: '#2563eb', backgroundColor: '#2563eb', tension: 0, borderWidth: 2, pointRadius: 4, pointStyle: 'line', yAxisID: 'y' },
+                    { label: 'Sales Volume', data: volumes, type: 'bar', backgroundColor: 'rgba(156, 163, 175, 0.4)', pointStyle: 'rect', yAxisID: 'y1' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { labels: { usePointStyle: true, boxWidth: 12 } },
+                    tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + (context.dataset.type === 'bar' ? context.parsed.y : formatCurrency(context.parsed.y)); } } }
+                },
+                scales: {
+                    y: { type: 'linear', display: true, position: 'left', beginAtZero: true, title: { display: true, text: 'Price ($)'} },
+                    y1: { type: 'linear', display: true, position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Volume (n)'} }
+                }
+            }
+        });
+        new bootstrap.Modal(document.getElementById('suburbModal')).show();
+    }
+
+    function renderMatrixContent(region, year) {
+        let thead = document.getElementById('matrixTableHeader');
+        let tbody = document.getElementById('regionModalTableBody');
+        
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        let d = regionMasterData[region][year];
+        if(!d || d.n === 0 || isNaN(d.mu_R)) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-5">No Data Available for ${year}</td></tr>`;
+            return;
+        }
+
+        const z_vals = [3, 2, 1, 0, -1, -2, -3]; 
+        
+        let minP = Math.exp((-3 * d.sigma_R + d.mu_R) * (-3 * d.sigma_L + d.mu_L)) * 1000000;
+        let maxP = Math.exp((3 * d.sigma_R + d.mu_R) * (3 * d.sigma_L + d.mu_L)) * 1000000;
+        let minLog = Math.log(minP), maxLog = Math.log(maxP);
+
+        let trHeadTop = document.createElement('tr');
+        trHeadTop.innerHTML = `
+            <th rowspan="2" colspan="2" class="align-middle border-0 bg-white"></th>
+            <th colspan="7" class="bg-dark text-white rounded-top">Z-Score of Log Area (Regional Baseline)</th>
+        `;
+        thead.appendChild(trHeadTop);
+
+        let trHeadBot = document.createElement('tr');
+        trHeadBot.className = 'bg-light';
+        [...z_vals].reverse().forEach(zl => {
+            let area_sqm = Math.exp((zl * d.sigma_L) + d.mu_L);
+            trHeadBot.innerHTML += `<th class="py-2">Z=${zl} <br><small class="text-muted fw-normal" style="font-size: 0.75rem;">(${Math.round(area_sqm)} m²)</small></th>`;
+        });
+        thead.appendChild(trHeadBot);
+
+        z_vals.forEach((zr, idx) => {
+            let tr = document.createElement('tr');
+            
+            if (idx === 0) {
+                tr.innerHTML += `<td rowspan="7" class="bg-dark text-white align-middle px-2 rounded-start" style="writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.1em; font-size: 0.75rem; text-transform: uppercase;"><strong>Z-Score Log Ratio (Regional Base)</strong></td>`;
+            }
+            
+            tr.innerHTML += `<th class="bg-light align-middle">Z=${zr}</th>`;
+            
+            [...z_vals].reverse().forEach(zl => {
+                let R = (zr * d.sigma_R) + d.mu_R;
+                let L = (zl * d.sigma_L) + d.mu_L;
+                let P = Math.exp(R * L) * 1000000; 
+                
+                let norm = maxLog === minLog ? 0.5 : (Math.log(P) - minLog) / (maxLog - minLog);
+                let color = `hsl(${norm * 120}, 70%, 90%)`;
+                
+                let isActive = activeMatrixCells.has(`${zl},${zr}`);
+                let borderClass = isActive ? 'border border-dark border-2 shadow-sm opacity-100' : 'opacity-75';
+                if (isActive) color = `hsl(${norm * 120}, 80%, 75%)`; 
+                
+                let safeRegStr = region.replace(/'/g, "\\'");
+                
+                tr.innerHTML += `<td style="background-color: ${color}; min-width: 90px; cursor: pointer;" 
+                                     class="matrix-cell py-3 ${borderClass} transition-all" 
+                                     onclick="toggleMatrixCell(${zl}, ${zr}, '${safeRegStr}')">
+                                     <span class="${isActive ? 'fw-bold text-dark' : 'text-muted'}">${formatShortCurrency(P)}</span>
+                                 </td>`;
+            });
+            tbody.appendChild(tr);
+        });
     }
 
     function renderRegionTable() {
@@ -1306,91 +1322,6 @@
         }).draw();
     }
 
-    function openSuburbModal(suburb) {
-        document.getElementById('suburbModalTitle').innerText = `${suburb} - Historical Tracking`;
-        let tBody = document.getElementById('suburbModalTableBody');
-        tBody.innerHTML = '';
-        
-        let isDark = document.body.getAttribute('data-theme') === 'dark';
-        let bgLightness = isDark ? 25 : 90;
-        let emptyBg = isDark ? '#2a2a2a' : '#e5e7eb';
-
-        let means = [], medians = [], volumes = [];
-        YEARS.forEach(year => {
-            let data = suburbMasterData[suburb][year];
-            if(data && data.n > 0) {
-                means.push(data.mean); medians.push(data.median); volumes.push(data.n);
-            } else {
-                means.push(null); medians.push(null); volumes.push(0);
-            }
-        });
-
-        const allPrices = [...means, ...medians].filter(v => v !== null && v > 0);
-        let minLog = 0, maxLog = 0;
-        if (allPrices.length > 0) {
-            minLog = Math.log(Math.min(...allPrices));
-            maxLog = Math.log(Math.max(...allPrices));
-        }
-        
-        const getCellBg = (val) => {
-            if (val == null || val <= 0) return emptyBg; 
-            const norm = maxLog === minLog ? 0.5 : (Math.log(val) - minLog) / (maxLog - minLog);
-            return `hsl(${norm * 120}, 70%, ${bgLightness}%)`; 
-        };
-
-        const getVolumeBg = (n) => {
-            if (!n) return emptyBg;
-            const norm = Math.min(n / 100, 1); 
-            return `hsl(300, 80%, ${isDark ? 20 + (norm * 15) : 100 - (norm * 15)}%)`; 
-        };
-
-        let trMean = document.createElement('tr'); trMean.innerHTML = '<td class="sticky-left bg-light"><strong>Mean Price</strong></td>';
-        let trMed = document.createElement('tr'); trMed.innerHTML = '<td class="sticky-left bg-light"><strong>Median Price</strong></td>';
-        let trVol = document.createElement('tr'); trVol.innerHTML = '<td class="sticky-left bg-light"><strong>Volume (n)</strong></td>';
-
-        YEARS.forEach((year, i) => {
-            let mean = means[i], median = medians[i], vol = volumes[i];
-            
-            if(vol > 0) {
-                trMean.innerHTML += `<td style="background-color: ${getCellBg(mean)}; color: ${isDark ? '#e0e0e0' : 'inherit'}">${formatShortCurrency(mean)}</td>`;
-                trMed.innerHTML += `<td style="background-color: ${getCellBg(median)}; color: ${isDark ? '#e0e0e0' : 'inherit'}">${formatShortCurrency(median)}</td>`;
-                trVol.innerHTML += `<td style="background-color: ${getVolumeBg(vol)}; color: ${isDark ? '#e0e0e0' : 'inherit'}">${vol}</td>`;
-            } else {
-                trMean.innerHTML += `<td class="text-muted" style="background-color: ${emptyBg};">-</td>`;
-                trMed.innerHTML += `<td class="text-muted" style="background-color: ${emptyBg};">-</td>`;
-                trVol.innerHTML += `<td class="text-muted" style="background-color: ${emptyBg};">0</td>`;
-            }
-        });
-        
-        tBody.appendChild(trMean); tBody.appendChild(trMed); tBody.appendChild(trVol);
-
-        if(suburbChartInstance) suburbChartInstance.destroy();
-        const ctx = document.getElementById('suburbChartCanvas').getContext('2d');
-        suburbChartInstance = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: YEARS,
-                datasets: [
-                    { label: 'Mean Price', data: means, borderColor: '#dc2626', backgroundColor: '#dc2626', tension: 0, borderWidth: 2, pointRadius: 4, pointStyle: 'line', yAxisID: 'y' },
-                    { label: 'Median Price', data: medians, borderColor: '#2563eb', backgroundColor: '#2563eb', tension: 0, borderWidth: 2, pointRadius: 4, pointStyle: 'line', yAxisID: 'y' },
-                    { label: 'Sales Volume', data: volumes, type: 'bar', backgroundColor: 'rgba(156, 163, 175, 0.4)', pointStyle: 'rect', yAxisID: 'y1' }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
-                plugins: {
-                    legend: { labels: { usePointStyle: true, boxWidth: 12 } },
-                    tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + (context.dataset.type === 'bar' ? context.parsed.y : formatCurrency(context.parsed.y)); } } }
-                },
-                scales: {
-                    y: { type: 'linear', display: true, position: 'left', beginAtZero: true, title: { display: true, text: 'Price ($)'} },
-                    y1: { type: 'linear', display: true, position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Volume (n)'} }
-                }
-            }
-        });
-        new bootstrap.Modal(document.getElementById('suburbModal')).show();
-    }
-
     function openRegionMatrix(region, initialYear) {
         currentSelectedRegion = region;
         document.getElementById('regionModalTitle').innerText = `${region} - Bivariate Matrix`;
@@ -1409,76 +1340,6 @@
         drawRegionChart(region);
         
         new bootstrap.Modal(document.getElementById('regionModal')).show();
-    }
-
-    function renderMatrixContent(region, year) {
-        let thead = document.getElementById('matrixTableHeader');
-        let tbody = document.getElementById('regionModalTableBody');
-        
-        thead.innerHTML = '';
-        tbody.innerHTML = '';
-
-        let d = regionMasterData[region][year];
-        if(!d || d.n === 0 || isNaN(d.mu_R)) {
-            tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-5">No Data Available for ${year}</td></tr>`;
-            return;
-        }
-
-        const z_vals = [3, 2, 1, 0, -1, -2, -3]; 
-        
-        let minP = Math.exp((-3 * d.sigma_R + d.mu_R) * (-3 * d.sigma_L + d.mu_L)) * 1000000;
-        let maxP = Math.exp((3 * d.sigma_R + d.mu_R) * (3 * d.sigma_L + d.mu_L)) * 1000000;
-        let minLog = Math.log(minP), maxLog = Math.log(maxP);
-
-        let isDark = document.body.getAttribute('data-theme') === 'dark';
-        let bgLightness = isDark ? 25 : 90;
-
-        let trHeadTop = document.createElement('tr');
-        trHeadTop.innerHTML = `
-            <th rowspan="2" colspan="2" class="align-middle border-0 bg-white"></th>
-            <th colspan="7" class="bg-dark text-white rounded-top">Z-Score of Log Area (Regional Baseline)</th>
-        `;
-        thead.appendChild(trHeadTop);
-
-        let trHeadBot = document.createElement('tr');
-        trHeadBot.className = 'bg-light';
-        [...z_vals].reverse().forEach(zl => {
-            let area_sqm = Math.exp((zl * d.sigma_L) + d.mu_L);
-            trHeadBot.innerHTML += `<th class="py-2">Z=${zl} <br><small class="text-muted fw-normal" style="font-size: 0.75rem;">(${Math.round(area_sqm)} m²)</small></th>`;
-        });
-        thead.appendChild(trHeadBot);
-
-        z_vals.forEach((zr, idx) => {
-            let tr = document.createElement('tr');
-            
-            if (idx === 0) {
-                tr.innerHTML += `<td rowspan="7" class="bg-dark text-white align-middle px-2 rounded-start" style="writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.1em; font-size: 0.75rem; text-transform: uppercase;"><strong>Z-Score Log Ratio (Regional Base)</strong></td>`;
-            }
-            
-            tr.innerHTML += `<th class="bg-light align-middle">Z=${zr}</th>`;
-            
-            [...z_vals].reverse().forEach(zl => {
-                let R = (zr * d.sigma_R) + d.mu_R;
-                let L = (zl * d.sigma_L) + d.mu_L;
-                let P = Math.exp(R * L) * 1000000; 
-                
-                let norm = maxLog === minLog ? 0.5 : (Math.log(P) - minLog) / (maxLog - minLog);
-                let color = `hsl(${norm * 120}, 70%, ${bgLightness}%)`;
-                
-                let isActive = activeMatrixCells.has(`${zl},${zr}`);
-                let borderClass = isActive ? 'border border-dark border-2 shadow-sm opacity-100' : 'opacity-75';
-                if (isActive) color = `hsl(${norm * 120}, 80%, ${isDark ? 35 : 75}%)`; 
-                
-                let safeRegStr = region.replace(/'/g, "\\'");
-                
-                tr.innerHTML += `<td style="background-color: ${color}; color: ${isDark ? '#e0e0e0' : 'inherit'}; min-width: 90px; cursor: pointer;" 
-                                     class="matrix-cell py-3 ${borderClass} transition-all" 
-                                     onclick="toggleMatrixCell(${zl}, ${zr}, '${safeRegStr}')">
-                                     <span class="${isActive ? 'fw-bold text-dark' : 'text-muted'}">${formatShortCurrency(P)}</span>
-                                 </td>`;
-            });
-            tbody.appendChild(tr);
-        });
     }
 
     function drawRegionChart(region) {
@@ -1773,35 +1634,6 @@ $(document).on('input change', '#calcRegionInput, #calcYearSelect, #calcAreaInpu
                 }
             });
     });
-
-// --- Dark Mode Logic ---
-const themeToggleBtn = document.getElementById('darkModeToggle');
-
-// Check if user previously selected dark mode
-if (localStorage.getItem('theme') === 'dark') {
-    document.body.setAttribute('data-theme', 'dark');
-    themeToggleBtn.innerText = '☀️ Light Mode';
-}
-
-themeToggleBtn.addEventListener('click', () => {
-    if (document.body.getAttribute('data-theme') === 'dark') {
-        document.body.removeAttribute('data-theme');
-        localStorage.setItem('theme', 'light');
-        themeToggleBtn.innerText = '🌙 Dark Mode';
-    } else {
-        document.body.setAttribute('data-theme', 'dark');
-        localStorage.setItem('theme', 'dark');
-        themeToggleBtn.innerText = '☀️ Light Mode';
-    }
-    
-    // Refresh tables to dynamically apply the correct background lightness
-    if (suburbMasterData) {
-        renderSuburbTables();
-        if (currentSelectedRegion) {
-            renderMatrixContent(currentSelectedRegion, parseInt(document.getElementById('matrixYearSelect').value));
-        }
-    }
-});
 </script>
 </body>
 </html>
